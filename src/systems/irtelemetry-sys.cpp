@@ -258,10 +258,18 @@ void IrTelemetrySystem::unconfigure(class ECS::World *world)
 void IrTelemetrySystem::receive(ECS::World *world, const OnFrameNumChangeRequest &event)
 {
     // irsdk_broadcastMsg(irsdk_BroadcastReplaySearch, irsdk_RpySrch_ToStart, 0);
+
     irsdk_broadcastMsg(irskd_BroadcastReplaySetPlayPosition, irsdk_RpyPos_Begin, event.frameNum);
-    Sleep(100);
+
+    int actual = 0;
+    while (event.frameNum != actual)
+    {
+        // std::cout << "waiting for frame " << event.frameNum << " got " << actual << std::endl;
+        irsdkClient::instance().waitForData(16);
+        actual = g_replayFrameNum.getInt();
+        Sleep(100);
+    }
     irsdk_broadcastMsg(irsdk_BroadcastReplaySetPlaySpeed, 1, false, 0);
-    Sleep(100);
 }
 
 void IrTelemetrySystem::receive(ECS::World *world, const OnCameraChangeRequest &event)

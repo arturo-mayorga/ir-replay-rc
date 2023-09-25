@@ -1,56 +1,66 @@
 #include "ecs.h"
+#include "ecs-util.h"
 #include <iostream>
 
 #include <Windows.h>
 #include <sysinfoapi.h>
 
 #include "systems/irtelemetry-sys.h"
-#include "systems/overtake-detector-system.h"
-#include "systems/incident-detector-system.h"
-#include "systems/closest-battle-director-sys.h"
-#include "systems/broadcast-car-info-collector-sys.h"
-#include "systems/tui-sys.h"
-#include "systems/broadcast-summary-sys.h"
-#include "systems/tv-point-director-sys.h"
-#include "systems/head-of-direction-sys.h"
-#include "systems/scraper-system.h"
+#include "systems/replay-director-system.h"
 
 #include "components/car-comp.h"
+#include "components/session-comp.h"
 #include "components/cam-ctrl-comp.h"
 
-#include "components/app-state-comp.h"
-#include "components/session-comp.h"
-
 #include <ctime>
+
+CameraScriptComponentSP loadScript(ECS::World *world)
+{
+    std::cout << "Loading Script..." << std::endl;
+    int scriptItemCount = 0;
+    std::cin >> scriptItemCount;
+
+    ECS::Entity *camScriptEnt = world->create();
+    auto camScript = camScriptEnt->assign<CameraScriptComponentSP>(new CameraScriptComponent()).get();
+    for (int i = 0; i < scriptItemCount; ++i)
+    {
+        int time = 0;
+        int driverId = 0;
+
+        std::cin >> time;
+        std::cin >> driverId;
+
+        camScript.get()->items.push_back(CameraScriptItemSP(new CameraScriptItem(time, driverId)));
+    }
+
+    std::cout << scriptItemCount << std::endl;
+
+    std::cout << "Starting Loop..." << std::endl;
+
+    return camScript;
+}
 
 int main()
 {
     ECS::World *world = ECS::World::createWorld();
 
     world->registerSystem(new IrTelemetrySystem());
-    world->registerSystem(new OvertakeDetectorSystem());
-    world->registerSystem(new IncidentDetectorSystem());
-    world->registerSystem(new BroadcastCarInfoCollectorSystem());
-    world->registerSystem(new BroadcastSummarySystem());
-    world->registerSystem(new TvPointDirectorSystem());
-    world->registerSystem(new ClosestBattleDirectorSystem());
-    world->registerSystem(new HeadOfDirectionSystem());
-    world->registerSystem(new ScraperSystem());
-
-    TuiSystem *tui = new TuiSystem();
-    world->registerSystem(tui);
+    world->registerSystem(new ReplayDirectorSystem());
 
     ECS::Entity *ent = world->create();
     ent->assign<CameraActualsComponentSP>(new CameraActualsComponent());
     ent->assign<CameraDirectionSubTargetsComponentSP>(new CameraDirectionSubTargetsComponent());
-    ent->assign<ApplicationStateComponentSP>(new ApplicationStateComponent());
     ent->assign<SessionComponentSP>(new SessionComponent());
-    ent->assign<OvertakeSummaryComponentSP>(new OvertakeSummaryComponent());
-    ent->assign<DetectedIncidentSummaryComponentSP>(new DetectedIncidentSummaryComponent());
+
+    // mciSendString("open \"script_305858.wav\" type mpegvideo alias mp3", NULL, 0, NULL);
+    // mciSendString((LPCSTR) "play mp3 wait", NULL, 0, NULL);
+    // std::cout << "audio finished" << std::endl;
 
     auto tPrev = GetTickCount();
 
-    while (!tui->isFinished())
+    auto script = loadScript(world);
+
+    while (script->done == 0)
     {
         auto t = GetTickCount();
         world->tick((float)(t - tPrev));

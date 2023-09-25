@@ -47,26 +47,11 @@ add_executable(
     src/irsdk/irsdk_diskclient.cpp
     src/irsdk/irsdk_utils.cpp
     src/irsdk/yaml_parser.cpp
-    src/txt-view/car-event-log-table.cpp
-    src/txt-view/tv-driver-table.cpp
-    src/txt-view/simple-label.cpp
     src/systems/irtelemetry-sys.cpp
-    src/systems/overtake-detector-system.cpp
-    src/systems/incident-detector-system.cpp
-    src/systems/closest-battle-director-sys.cpp
-    src/systems/broadcast-car-info-collector-sys.cpp 
-    src/systems/tui-sys.cpp
-    src/systems/broadcast-summary-sys.cpp
-    src/systems/tv-point-director-sys.cpp
-    src/systems/head-of-direction-sys.cpp
-    src/systems/scraper-system.cpp
+    src/systems/replay-director-system.cpp
 )
 
-TARGET_LINK_LIBRARIES(camdir
-  PRIVATE ftxui::screen
-  PRIVATE ftxui::dom
-  PRIVATE ftxui::component 
-)
+TARGET_LINK_LIBRARIES(camdir)
 
 add_executable(
     ir2stdout

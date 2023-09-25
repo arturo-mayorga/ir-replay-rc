@@ -88,6 +88,9 @@
         "codecvt": "cpp",
         "csignal": "cpp",
         "queue": "cpp",
-        "stack": "cpp"
+        "stack": "cpp",
+        "string_view": "cpp",
+        "xmemory0": "cpp",
+        "xthread": "cpp"
     }
 }

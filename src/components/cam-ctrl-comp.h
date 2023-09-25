@@ -59,4 +59,27 @@ struct CameraDirectionSubTargetsComponent
 ECS_DEFINE_TYPE(CameraDirectionSubTargetsComponent);
 typedef std::shared_ptr<CameraDirectionSubTargetsComponent> CameraDirectionSubTargetsComponentSP;
 
+struct CameraScriptItem
+{
+    ECS_DECLARE_TYPE;
+
+    CameraScriptItem(int time_, int driverId_) : time(time_), driverId(driverId_) {}
+
+    int time;
+    int driverId;
+};
+typedef std::shared_ptr<CameraScriptItem> CameraScriptItemSP;
+
+struct CameraScriptComponent
+{
+    ECS_DECLARE_TYPE;
+
+    CameraScriptComponent() : done(0) {}
+
+    std::vector<CameraScriptItemSP> items;
+    int done;
+};
+ECS_DEFINE_TYPE(CameraScriptComponent);
+typedef std::shared_ptr<CameraScriptComponent> CameraScriptComponentSP;
+
 #endif
