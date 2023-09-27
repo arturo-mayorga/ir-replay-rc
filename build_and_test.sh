@@ -1,5 +1,4 @@
 #!/bin/bash
 
-cmake -S . -B build
-cmake --build build
+./build.sh
 cd build && ctest

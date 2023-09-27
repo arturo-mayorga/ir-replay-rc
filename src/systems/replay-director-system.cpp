@@ -17,18 +17,19 @@ enum ReplayState
     SEEKING_JUMP,
     VIEWING_WAIT,
     VIEWING_JUMP,
+    SPIN,
     DONE
 };
 
 void playSoundForTime(int time)
 {
-    std::stringstream sout;
-    sout << "open \"script_" << time << ".wav\" type mpegvideo alias mp3";
-    std::cout << "playing: " << sout.str() << std::endl;
-    mciSendString((LPCSTR)(sout.str().c_str()), NULL, 0, NULL);
-    mciSendString((LPCSTR) "play mp3 wait", NULL, 0, NULL);
-    mciSendString("close mp3", NULL, 0, NULL);
-    std::cout << "audio finished" << std::endl;
+    std::wstringstream sout;
+    sout << L"open \"script_" << time << L".wav\" type mpegvideo alias mp3";
+    std::wcout << L"playing: " << sout.str() << std::endl;
+    mciSendString((LPCWSTR)(sout.str().c_str()), NULL, 0, NULL);
+    mciSendString((LPCWSTR) "play mp3 wait", NULL, 0, NULL);
+    mciSendString(L"close mp3", NULL, 0, NULL);
+    std::wcout << L"audio finished" << std::endl;
 }
 
 ReplayDirectorSystem::~ReplayDirectorSystem() {}
@@ -64,7 +65,17 @@ void ReplayDirectorSystem::tick(class ECS::World *world, float deltaTime)
             });
 
         scriptItemIndex = 0;
-        // state = SEEKING;
+
+        if (camScript->items.size() == 0)
+        {
+            std::cout << "Entering SPIN mode for testing" << std::endl;
+            state = SPIN;
+        }
+
+        break;
+    }
+    case SPIN:
+    {
         break;
     }
     case SEEKING:

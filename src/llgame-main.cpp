@@ -7,18 +7,21 @@
 
 #include "systems/irtelemetry-sys.h"
 #include "systems/replay-director-system.h"
+#include "systems/window-rendering-sys.h"
+#include "systems/timing-tower-sys.h"
 
 #include "components/car-comp.h"
 #include "components/session-comp.h"
 #include "components/cam-ctrl-comp.h"
 
 #include <ctime>
+#include <tchar.h>
 
 CameraScriptComponentSP loadScript(ECS::World *world)
 {
     std::cout << "Loading Script..." << std::endl;
     int scriptItemCount = 0;
-    std::cin >> scriptItemCount;
+    // std::cin >> scriptItemCount;
 
     ECS::Entity *camScriptEnt = world->create();
     auto camScript = camScriptEnt->assign<CameraScriptComponentSP>(new CameraScriptComponent()).get();
@@ -42,19 +45,20 @@ CameraScriptComponentSP loadScript(ECS::World *world)
 
 int main()
 {
+    // std::cout << "opening window" << std::endl;
+    // openWindow();
+    // std::cout << "window opened" << std::endl;
     ECS::World *world = ECS::World::createWorld();
-
-    world->registerSystem(new IrTelemetrySystem());
-    world->registerSystem(new ReplayDirectorSystem());
 
     ECS::Entity *ent = world->create();
     ent->assign<CameraActualsComponentSP>(new CameraActualsComponent());
     ent->assign<CameraDirectionSubTargetsComponentSP>(new CameraDirectionSubTargetsComponent());
     ent->assign<SessionComponentSP>(new SessionComponent());
 
-    // mciSendString("open \"script_305858.wav\" type mpegvideo alias mp3", NULL, 0, NULL);
-    // mciSendString((LPCSTR) "play mp3 wait", NULL, 0, NULL);
-    // std::cout << "audio finished" << std::endl;
+    world->registerSystem(new IrTelemetrySystem());
+    world->registerSystem(new ReplayDirectorSystem());
+    world->registerSystem(new TimingTowerSystem());
+    world->registerSystem(new WindowRenderingSystem());
 
     auto tPrev = GetTickCount();
 
