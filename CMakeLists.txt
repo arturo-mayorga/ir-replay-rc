@@ -4,6 +4,9 @@ project(my_project)
 # GoogleTest requires at least C++17
 set(CMAKE_CXX_STANDARD 17)
 
+# supress deprecated warnings
+#add_compile_options(/wd4996)
+
 add_definitions(-D_UNICODE -DUNICODE)
 
 

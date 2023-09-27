@@ -4,6 +4,7 @@
 #include <tchar.h>
 #include <iostream>
 #include <functional>
+#include <set>
 
 TCHAR *WINDOW_RENDERING_SYS_CLASS_NAME = _T("window-rendering-sys");
 
@@ -87,6 +88,15 @@ LRESULT WindowRenderingSystem::windowProc(HWND hwnd, UINT uMsg, WPARAM wParam, L
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(hwnd, &ps);
 
+        // Dimensions of the area you want to redraw
+        int width = ps.rcPaint.right - ps.rcPaint.left;
+        int height = ps.rcPaint.bottom - ps.rcPaint.top;
+
+        // Create memory DC and bitmap
+        HDC memDC = CreateCompatibleDC(hdc);
+        HBITMAP memBitmap = CreateCompatibleBitmap(hdc, width, height);
+        HBITMAP oldBitmap = (HBITMAP)SelectObject(memDC, memBitmap);
+
         if (_hwndToEntityMap.find(hwnd) != _hwndToEntityMap.end())
         {
             ECS::Entity *ent = _hwndToEntityMap[hwnd];
@@ -100,7 +110,7 @@ LRESULT WindowRenderingSystem::windowProc(HWND hwnd, UINT uMsg, WPARAM wParam, L
                         HBRUSH hBrush = CreateSolidBrush(myColor);
 
                         RECT rc = {rect->x, rect->y, rect->x + rect->w, rect->y + rect->h};
-                        FillRect(hdc, &rc, hBrush);
+                        FillRect(memDC, &rc, hBrush);
 
                         DeleteObject(hBrush);
                     }
@@ -117,15 +127,15 @@ LRESULT WindowRenderingSystem::windowProc(HWND hwnd, UINT uMsg, WPARAM wParam, L
 
                         _tcscpy_s(lf.lfFaceName, _T("Myriad Pro"));
                         HFONT hFont = CreateFontIndirect(&lf);
-                        HFONT hOldFont = (HFONT)SelectObject(hdc, hFont);
+                        HFONT hOldFont = (HFONT)SelectObject(memDC, hFont);
 
                         COLORREF textColor = RGB(txt->r, txt->g, txt->b);
-                        SetTextColor(hdc, textColor);
-                        SetBkMode(hdc, TRANSPARENT);
+                        SetTextColor(memDC, textColor);
+                        SetBkMode(memDC, TRANSPARENT);
 
-                        TextOut(hdc, txt->x, txt->y, txt->text.c_str(), (int)txt->text.length());
+                        TextOut(memDC, txt->x, txt->y, txt->text.c_str(), (int)txt->text.length());
 
-                        SelectObject(hdc, hOldFont);
+                        SelectObject(memDC, hOldFont);
                         DeleteObject(hFont);
                     }
                 });
@@ -134,6 +144,14 @@ LRESULT WindowRenderingSystem::windowProc(HWND hwnd, UINT uMsg, WPARAM wParam, L
         {
             // TODO: time to delete the window here
         }
+
+        // Copy (BitBlt) the memory DC content to the primary DC
+        BitBlt(hdc, ps.rcPaint.left, ps.rcPaint.top, width, height, memDC, 0, 0, SRCCOPY);
+
+        // Clean up
+        SelectObject(memDC, oldBitmap);
+        DeleteObject(memBitmap);
+        DeleteDC(memDC);
 
         EndPaint(hwnd, &ps);
 
@@ -148,6 +166,9 @@ LRESULT WindowRenderingSystem::windowProc(HWND hwnd, UINT uMsg, WPARAM wParam, L
     case WM_DESTROY:
         PostQuitMessage(0);
         return 0;
+
+    case WM_ERASEBKGND:
+        return 1;
 
     case WM_LBUTTONDOWN:
     {
@@ -178,19 +199,6 @@ WindowRenderingSystem::~WindowRenderingSystem()
 void WindowRenderingSystem::configure(class ECS::World *world)
 {
     _latestWorld = world;
-    for (ECS::Entity *ent : world->each<CanvasConfigComponentSP>())
-    {
-        ent->with<CanvasConfigComponentSP>(
-            [&](ECS::ComponentHandle<CanvasConfigComponentSP> canvasConfig)
-            {
-                std::cout << "found canvas comp" << canvasConfig.get()->w << canvasConfig.get()->h << std::endl;
-                auto windowInfo = openWindow(canvasConfig.get(), this);
-
-                std::cout << "saving window " << windowInfo->hwnd << std::endl;
-
-                _hwndToEntityMap[windowInfo->hwnd] = ent;
-            });
-    }
 }
 
 void WindowRenderingSystem::unconfigure(class ECS::World *world)
@@ -204,6 +212,10 @@ void WindowRenderingSystem::tick(class ECS::World *world, float deltaTime)
     MSG msg = {};
     BOOL result;
 
+    static float redrawTimeAcc = 0;
+
+    redrawTimeAcc += deltaTime;
+
     while ((result = PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) != 0)
     {
         if (msg.message == WM_QUIT)
@@ -212,5 +224,34 @@ void WindowRenderingSystem::tick(class ECS::World *world, float deltaTime)
         }
         TranslateMessage(&msg);
         DispatchMessage(&msg);
+    }
+
+    if (redrawTimeAcc > 200)
+    {
+        for (auto it = _hwndToEntityMap.begin(); it != _hwndToEntityMap.end(); ++it)
+        {
+            InvalidateRect(it->first, NULL, TRUE);
+        }
+        redrawTimeAcc = 0;
+    }
+
+    static std::set<int> openCanvasIds;
+
+    for (ECS::Entity *ent : world->each<CanvasConfigComponentSP>())
+    {
+        ent->with<CanvasConfigComponentSP>(
+            [&](ECS::ComponentHandle<CanvasConfigComponentSP> canvasConfig)
+            {
+                if (openCanvasIds.find(canvasConfig.get()->id) == openCanvasIds.end())
+                {
+                    std::cout << "found canvas comp" << canvasConfig.get()->w << canvasConfig.get()->h << std::endl;
+                    openCanvasIds.insert(canvasConfig.get()->id);
+                    auto windowInfo = openWindow(canvasConfig.get(), this);
+
+                    std::cout << "saving window " << windowInfo->hwnd << std::endl;
+
+                    _hwndToEntityMap[windowInfo->hwnd] = ent;
+                }
+            });
     }
 }

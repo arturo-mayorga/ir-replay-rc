@@ -68,6 +68,80 @@ void monitorConnectionStatus()
     }
 }
 
+std::map<int, int> getSessionLapCountMap(const char *yaml)
+{
+    std::map<int, int> ret;
+    std::map<int, int> inter;
+
+    char valstr[512];
+    int valstrlen = 512;
+    char str[512];
+
+    const char *tVal = NULL;
+    int tValLen = 0;
+
+    int i = 0;
+    int maxSessionIdx = -1;
+
+    do
+    {
+        sprintf_s(str, 512, "SessionInfo:Sessions:SessionNum:{%d}SessionLaps:", i);
+        if (parseYaml(yaml, str, &tVal, &tValLen))
+        {
+            int len = tValLen;
+            if (len > 512)
+                len = 512;
+
+            // copy what we can, even if buffer too small
+            memcpy(valstr, tVal, len);
+            valstr[len] = '\0'; // original string has no null termination...
+
+            int sessionLaps = atoi(valstr);
+            int sessionNum = -1;
+
+            // std::cout << " session data :: " << name << " ";
+
+            if (i == 0)
+            {
+                sprintf_s(str, 512, "SessionInfo:Sessions:SessionNum:");
+            }
+            else
+            {
+                sprintf_s(str, 512, "SessionInfo:Sessions:SessionNum:{%d}SessionNum:", i - 1);
+            }
+            if (parseYaml(yaml, str, &tVal, &tValLen))
+            {
+                int len = tValLen;
+                if (len > 512)
+                    len = 512;
+
+                // copy what we can, even if buffer too small
+                memcpy(valstr, tVal, len);
+                valstr[len] = '\0'; // original string has no null termination...
+                sessionNum = atoi(valstr);
+                // std::cout << sessionNum << "\n";
+            }
+
+            inter[sessionNum] = sessionLaps;
+
+            maxSessionIdx = i;
+
+            ++i;
+        }
+        else
+        {
+            i = -1;
+        }
+    } while (i != -1);
+
+    for (int i = 0; i <= maxSessionIdx; ++i)
+    {
+        ret[i - maxSessionIdx] = inter[i];
+    }
+
+    return ret;
+}
+
 std::map<int, std::string> getSessionNameMap(const char *yaml)
 {
     std::map<int, std::string> ret;
@@ -318,6 +392,7 @@ void IrTelemetrySystem::tick(class ECS::World *world, float deltaTime)
     static float tSinceCamChange = 0;
     static float tSinceIrData = 0;
     static std::map<int, std::string> sessionNameMap;
+    static std::map<int, int> sessionLapsMap;
     static int maxSessionIdx = -1;
 
     tSinceCamChange += deltaTime;
@@ -333,6 +408,7 @@ void IrTelemetrySystem::tick(class ECS::World *world, float deltaTime)
 
             auto cStates = getStaticCarStates(irsdk_getSessionInfoStr());
             sessionNameMap = getSessionNameMap(irsdk_getSessionInfoStr());
+            sessionLapsMap = getSessionLapCountMap(irsdk_getSessionInfoStr());
 
             for (auto it = sessionNameMap.begin(); it != sessionNameMap.end(); ++it)
             {
@@ -436,6 +512,7 @@ void IrTelemetrySystem::tick(class ECS::World *world, float deltaTime)
         SessionComponentSP sessionComp = ECSUtil::getFirstCmp<SessionComponentSP>(world);
         sessionComp->num = g_sessionNum.getInt() - maxSessionIdx;
         sessionComp->name = sessionNameMap[sessionComp->num];
+        sessionComp->lapCount = sessionLapsMap[sessionComp->num];
 
         tSinceIrData = 0;
 

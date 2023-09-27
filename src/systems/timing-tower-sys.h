@@ -8,6 +8,8 @@
 class TimingTowerSystem : public ECS::EntitySystem
 {
 private:
+    ECS::Entity *_canvasEnt;
+
 public:
     virtual ~TimingTowerSystem();
 
@@ -16,6 +18,10 @@ public:
     virtual void unconfigure(class ECS::World *world) override;
 
     virtual void tick(class ECS::World *world, float deltaTime) override;
+
+    void createWindow(ECS::World *world);
+
+    void updateTables(ECS::World *world);
 };
 
 #endif
