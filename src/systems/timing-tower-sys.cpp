@@ -3,13 +3,14 @@
 #include "../components/car-comp.h"
 #include "../components/session-comp.h"
 
+#include "../ecs-util.h"
+#include "../strutil.h"
+
 #include <iostream>
 #include <sstream>
 #include <map>
 
 #include <string>
-#include <locale>
-#include <codecvt>
 
 // #define TEST_TOWER_MODE 1
 
@@ -43,72 +44,9 @@ struct ColWidths
     int pit;
 };
 
-const ColWidths w(10, 15, 25, 130, 65, 10); ///    120    130    140
+const ColWidths w(10, 15, 25, 130, 65, 10);
 const int h = 20;
-const int headerHeight = w.m + 55;
-
-int getSessionLaps(class ECS::World *world)
-{
-    int ret = 0;
-    world->each<SessionComponentSP>(
-        [&](ECS::Entity *ent, ECS::ComponentHandle<SessionComponentSP> cStateH)
-        {
-            SessionComponentSP cState = cStateH.get();
-            ret = cState->lapCount;
-        });
-    return ret;
-}
-
-std::map<int, float> getIdx2numMap(class ECS::World *world)
-{
-    std::map<int, float> idx2num;
-    world->each<DynamicCarStateComponentSP>(
-        [&](ECS::Entity *ent, ECS::ComponentHandle<DynamicCarStateComponentSP> cStateH)
-        {
-            DynamicCarStateComponentSP cState = cStateH.get();
-            idx2num[cState->idx] = cState->currentLap * 100 + cState->lapDistPct;
-        });
-    return idx2num;
-}
-
-std::map<int, std::string> getIdx2nameMap(class ECS::World *world)
-{
-    std::map<int, std::string> idx2name;
-    world->each<StaticCarStateComponentSP>(
-        [&](ECS::Entity *ent, ECS::ComponentHandle<StaticCarStateComponentSP> cStateH)
-        {
-            StaticCarStateComponentSP cState = cStateH.get();
-            idx2name[cState->idx] = cState->name;
-        });
-    return idx2name;
-}
-
-int getCurrentLap(ECS::World *world)
-{
-    int currLap = 0;
-    world->each<DynamicCarStateComponentSP>(
-        [&](ECS::Entity *ent, ECS::ComponentHandle<DynamicCarStateComponentSP> cStateH)
-        {
-            DynamicCarStateComponentSP cState = cStateH.get();
-
-            if (currLap < cState->currentLap)
-            {
-                currLap = cState->currentLap;
-            }
-        });
-
-    return currLap;
-}
-
-std::wstring trimString_TimingTowerSystem(const std::wstring &input, int maxLen)
-{
-    if (input.size() <= maxLen)
-    {
-        return input;
-    }
-
-    return input.substr(0, maxLen - 1).append(L"...");
-}
+const int headerHeight = w.m + 60;
 
 std::vector<TowerEntrySP> getTowerEntries(ECS::World *world)
 {
@@ -128,42 +66,33 @@ std::vector<TowerEntrySP> getTowerEntries(ECS::World *world)
         ret.push_back(TowerEntrySP(new TowerEntry(p.str(), L"444", L"Jesper Sandstrom", L"+2.372", L"0", 1)));
     }
 #else
-    std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
-
-    std::vector<DynamicCarStateComponentSP> states;
-
-    std::map<int, int> carIdx2rtPos;
-    std::map<int, std::string> idx2name = getIdx2nameMap(world);
-
-    world->each<DynamicCarStateComponentSP>(
-        [&](ECS::Entity *ent, ECS::ComponentHandle<DynamicCarStateComponentSP> cStateH)
-        {
-            DynamicCarStateComponentSP cState = cStateH.get();
-
-            states.push_back(cState);
-        });
-
-    // sort the states by track position and current lap
-    std::sort(states.begin(), states.end(), [](DynamicCarStateComponentSP &a, DynamicCarStateComponentSP &b)
-              { return (a->currentLap == b->currentLap) ? a->lapDistPct > b->lapDistPct : a->currentLap > b->currentLap; });
+    auto lInfo = ECSUtil::getFirstCmp<SessionLeaderBoardComponentSP>(world);
 
     int i = 0;
-    for (auto state : states)
+    for (auto car : lInfo->carsByPosition)
     {
-        int cidx = state.get()->idx;
+        auto dCar = car->get<DynamicCarStateComponentSP>().get();
+        auto sCar = car->get<StaticCarStateComponentSP>().get();
+
         ++i;
-
-        if (idx2name[cidx].compare("Pace Car"))
+        std::wstringstream pos;
+        if (i < 10)
         {
-            std::wstringstream pos;
-            if (i < 10)
-            {
-                pos << L"   ";
-            }
-            pos << i;
-
-            ret.push_back(TowerEntrySP(new TowerEntry(pos.str(), L"???", trimString_TimingTowerSystem(converter.from_bytes(idx2name[cidx]), 15), L"???", L"?", 1)));
+            pos << L"   ";
         }
+        pos << i;
+
+        std::wstringstream number;
+        number << sCar->number;
+
+        ret.push_back(TowerEntrySP(
+            new TowerEntry(
+                pos.str(),
+                number.str(),
+                trimString(convertToWide(sCar->name), 15),
+                L"???",
+                L"?",
+                1)));
     }
 #endif
 
@@ -212,7 +141,8 @@ void TimingTowerSystem::updateTables(ECS::World *world)
     t1.get()->texts.clear();
 
     rect.get()->rects.push_back(FillRectInfoSP(new FillRectInfo(0, 0, wd, headerHeight, 22, 22, 24)));
-    rect.get()->rects.push_back(FillRectInfoSP(new FillRectInfo(0, headerHeight, wd, ht, 19, 19, 21)));
+    rect.get()->rects.push_back(FillRectInfoSP(new FillRectInfo(0, headerHeight, wd, 5, 255, 0, 255)));
+    rect.get()->rects.push_back(FillRectInfoSP(new FillRectInfo(0, headerHeight + 5, wd, ht, 19, 19, 21)));
     // title bg rgba(19,19,21
     // bg rgba(22,22,24,255)
 
@@ -230,8 +160,8 @@ void TimingTowerSystem::updateTables(ECS::World *world)
 
     headerOffset = (int)((wd - header2W) / 2);
 
-    int lapI = getCurrentLap(world);
-    int slapI = getSessionLaps(world);
+    int lapI = ECSUtil::getFirstCmp<SessionLeaderBoardComponentSP>(world)->currentLap;
+    int slapI = ECSUtil::getFirstCmp<SessionComponentSP>(world)->lapCount;
     std::wstringstream currentLap;
     std::wstringstream sessionLaps;
 
@@ -245,7 +175,7 @@ void TimingTowerSystem::updateTables(ECS::World *world)
         {
             currentLap << L"   ";
         }
-        currentLap << getCurrentLap(world);
+        currentLap << lapI;
         sessionLaps << L"/" << slapI;
     }
 
@@ -254,7 +184,7 @@ void TimingTowerSystem::updateTables(ECS::World *world)
     t1.get()->texts.push_back(TextInfoSP(new TextInfo(sessionLaps.str(), headerOffset + (int)(h * 3.25), h * 2, (int)(h * 1.15), 121, 121, 123)));
 
     int i = 0;
-    int yo = headerHeight;
+    int yo = headerHeight + 5;
     for (auto e : entries)
     {
         int x = w.m;

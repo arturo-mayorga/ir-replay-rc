@@ -4,9 +4,6 @@ project(my_project)
 # GoogleTest requires at least C++17
 set(CMAKE_CXX_STANDARD 17)
 
-# supress deprecated warnings
-#add_compile_options(/wd4996)
-
 add_definitions(-D_UNICODE -DUNICODE)
 
 
@@ -48,6 +45,7 @@ TARGET_LINK_LIBRARIES(hello_test ${LIBS} )
 add_executable(
     camdir
     src/llgame-main.cpp
+    src/strutil.cpp
     src/irsdk/irsdk_client.cpp
     src/irsdk/irsdk_diskclient.cpp
     src/irsdk/irsdk_utils.cpp
@@ -55,6 +53,7 @@ add_executable(
     src/components/rendering-comp.cpp
     src/systems/irtelemetry-sys.cpp
     src/systems/replay-director-system.cpp
+    src/systems/session-leaderboard-sys.cpp
     src/systems/window-rendering-sys.cpp
     src/systems/timing-tower-sys.cpp
     src/systems/current-driver-overlay-sys.cpp

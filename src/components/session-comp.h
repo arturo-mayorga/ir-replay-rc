@@ -17,4 +17,16 @@ struct SessionComponent
 ECS_DEFINE_TYPE(SessionComponent);
 typedef std::shared_ptr<SessionComponent> SessionComponentSP;
 
+struct SessionLeaderBoardComponent
+{
+    ECS_DECLARE_TYPE;
+
+    SessionLeaderBoardComponent() : currentLap(0) {}
+
+    int currentLap;
+    std::vector<ECS::Entity *> carsByPosition;
+};
+ECS_DEFINE_TYPE(SessionLeaderBoardComponent);
+typedef std::shared_ptr<SessionLeaderBoardComponent> SessionLeaderBoardComponentSP;
+
 #endif

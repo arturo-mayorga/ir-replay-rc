@@ -1,9 +1,10 @@
 #include "current-driver-overlay-sys.h"
 
 #include "../ecs-util.h"
+#include "../strutil.h"
 
 #include "../components/rendering-comp.h"
-
+#include "../components/session-comp.h"
 #include "../components/car-comp.h"
 #include "../components/cam-ctrl-comp.h"
 
@@ -30,18 +31,6 @@ struct CurrentDriverDisplayInfo
     std::wstring name;
 };
 
-std::map<int, std::string> getIdx2nameMap_CurrentDriverOverlaySystem(class ECS::World *world)
-{
-    std::map<int, std::string> idx2name;
-    world->each<StaticCarStateComponentSP>(
-        [&](ECS::Entity *ent, ECS::ComponentHandle<StaticCarStateComponentSP> cStateH)
-        {
-            StaticCarStateComponentSP cState = cStateH.get();
-            idx2name[cState->idx] = cState->name;
-        });
-    return idx2name;
-}
-
 std::shared_ptr<CurrentDriverDisplayInfo> getCurrentDriverDisplayInfo(class ECS::World *world)
 {
     std::shared_ptr<CurrentDriverDisplayInfo> ret(new CurrentDriverDisplayInfo());
@@ -55,29 +44,18 @@ std::shared_ptr<CurrentDriverDisplayInfo> getCurrentDriverDisplayInfo(class ECS:
     p = (p + 1) % 100;
 
 #else
-    std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
+    auto cameraActualsComponent = ECSUtil::getFirstCmp<CameraActualsComponentSP>(world).get();
 
-    auto cameraActualsComponent = ECSUtil::getFirstCmp<CameraActualsComponentSP>(world);
-    auto idx2nameMap = getIdx2nameMap_CurrentDriverOverlaySystem(world);
-    cameraActualsComponent.get()->currentCarIdx;
-    ret->name = converter.from_bytes(idx2nameMap[cameraActualsComponent.get()->currentCarIdx]);
+    auto lInfo = ECSUtil::getFirstCmp<SessionLeaderBoardComponentSP>(world);
 
-    std::vector<DynamicCarStateComponentSP> states;
-    world->each<DynamicCarStateComponentSP>(
-        [&](ECS::Entity *ent, ECS::ComponentHandle<DynamicCarStateComponentSP> cStateH)
-        {
-            DynamicCarStateComponentSP cState = cStateH.get();
-
-            states.push_back(cState);
-        });
-    // sort the states by track position and current lap
-    std::sort(states.begin(), states.end(), [](DynamicCarStateComponentSP &a, DynamicCarStateComponentSP &b)
-              { return (a->currentLap == b->currentLap) ? a->lapDistPct > b->lapDistPct : a->currentLap > b->currentLap; });
     int p = 1;
-    for (auto s : states)
+    for (auto car : lInfo->carsByPosition)
     {
-        if (s->idx == cameraActualsComponent.get()->currentCarIdx)
+        auto sCar = car->get<StaticCarStateComponentSP>().get();
+
+        if (sCar->idx == cameraActualsComponent->currentCarIdx)
         {
+            ret->name = convertToWide(sCar->name);
             break;
         }
         ++p;
@@ -114,8 +92,6 @@ void CurrentDriverOverlaySystem::tick(class ECS::World *world, float deltaTime)
 
 void CurrentDriverOverlaySystem::createWindow(ECS::World *world)
 {
-
-    // canvas comp
     _canvasEnt = world->create();
 
     auto cCfg = _canvasEnt->assign<CanvasConfigComponentSP>(new CanvasConfigComponent());
@@ -126,16 +102,6 @@ void CurrentDriverOverlaySystem::createWindow(ECS::World *world)
 
     auto rect = _canvasEnt->assign<FillRectsComponentSP>(new FillRectsComponent());
     auto t1 = _canvasEnt->assign<TextsComponentSP>(new TextsComponent());
-}
-
-std::wstring trimString(const std::wstring &input, int maxLen)
-{
-    if (input.size() <= maxLen)
-    {
-        return input;
-    }
-
-    return input.substr(0, maxLen - 1).append(L"...");
 }
 
 void CurrentDriverOverlaySystem::updateTables(ECS::World *world)
