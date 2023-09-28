@@ -9,6 +9,7 @@
 #include "systems/replay-director-system.h"
 #include "systems/window-rendering-sys.h"
 #include "systems/timing-tower-sys.h"
+#include "systems/current-driver-overlay-sys.h"
 
 #include "components/car-comp.h"
 #include "components/session-comp.h"
@@ -45,9 +46,6 @@ CameraScriptComponentSP loadScript(ECS::World *world)
 
 int main()
 {
-    // std::cout << "opening window" << std::endl;
-    // openWindow();
-    // std::cout << "window opened" << std::endl;
     ECS::World *world = ECS::World::createWorld();
 
     ECS::Entity *ent = world->create();
@@ -59,6 +57,7 @@ int main()
     world->registerSystem(new ReplayDirectorSystem());
     world->registerSystem(new TimingTowerSystem());
     world->registerSystem(new WindowRenderingSystem());
+    world->registerSystem(new CurrentDriverOverlaySystem());
 
     auto tPrev = GetTickCount();
 

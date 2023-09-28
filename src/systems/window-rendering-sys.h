@@ -18,9 +18,11 @@ class WindowRenderingSystem : public ECS::EntitySystem
 {
 private:
     std::shared_ptr<WindowInfo> _tWindowInfo;
-    std::map<HWND, ECS::Entity*> _hwndToEntityMap;
+    std::map<HWND, ECS::Entity *> _hwndToEntityMap;
 
     ECS::World *_latestWorld;
+
+    WNDCLASS _wc;
 
 public:
     virtual ~WindowRenderingSystem();

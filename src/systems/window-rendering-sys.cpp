@@ -40,12 +40,6 @@ std::shared_ptr<WindowInfo> openWindow(CanvasConfigComponentSP cfg, WindowRender
 
     std::shared_ptr<WindowInfo> ret(new WindowInfo());
 
-    // TODO: class registration will be a problem when we need more than one window
-    ret->wc->lpfnWndProc = WindowRenderingSystem::staticWindowProc;
-    ret->wc->hInstance = hInstance;
-    ret->wc->lpszClassName = WINDOW_RENDERING_SYS_CLASS_NAME;
-    RegisterClass(ret->wc.get());
-
     HWND hwnd = CreateWindowEx(
         WS_EX_LAYERED | WS_EX_TOPMOST | WS_EX_TRANSPARENT,
         WINDOW_RENDERING_SYS_CLASS_NAME,
@@ -67,8 +61,11 @@ std::shared_ptr<WindowInfo> openWindow(CanvasConfigComponentSP cfg, WindowRender
     ShowWindow(hwnd, SW_SHOWNORMAL);
     UpdateWindow(hwnd);
 
-    SetLayeredWindowAttributes(hwnd, RGB(255, 0, 255), 0, LWA_COLORKEY);
-    SetLayeredWindowAttributes(hwnd, 0, (255 * 90) / 100, LWA_ALPHA);
+    COLORREF transparentColor = RGB(255, 0, 255); // This color will be fully transparent.
+    BYTE alphaValue = (255 * 90) / 100;           // Semi-transparency for the rest of the window.
+
+    // Set the attributes for the layered window.
+    SetLayeredWindowAttributes(hwnd, transparentColor, alphaValue, LWA_COLORKEY | LWA_ALPHA);
 
     // std::vector<std::wstring> fonts = EnumerateFonts();
     // for (const auto &fontName : fonts)
@@ -198,6 +195,16 @@ WindowRenderingSystem::~WindowRenderingSystem()
 
 void WindowRenderingSystem::configure(class ECS::World *world)
 {
+    std::shared_ptr<WindowInfo> ret(new WindowInfo());
+
+    // TODO: class registration will be a problem when we need more than one window
+    HINSTANCE hInstance = GetModuleHandle(NULL);
+
+    _wc.lpfnWndProc = WindowRenderingSystem::staticWindowProc;
+    _wc.hInstance = hInstance;
+    _wc.lpszClassName = WINDOW_RENDERING_SYS_CLASS_NAME;
+    RegisterClass(&_wc);
+
     _latestWorld = world;
 }
 
@@ -244,11 +251,8 @@ void WindowRenderingSystem::tick(class ECS::World *world, float deltaTime)
             {
                 if (openCanvasIds.find(canvasConfig.get()->id) == openCanvasIds.end())
                 {
-                    std::cout << "found canvas comp" << canvasConfig.get()->w << canvasConfig.get()->h << std::endl;
                     openCanvasIds.insert(canvasConfig.get()->id);
                     auto windowInfo = openWindow(canvasConfig.get(), this);
-
-                    std::cout << "saving window " << windowInfo->hwnd << std::endl;
 
                     _hwndToEntityMap[windowInfo->hwnd] = ent;
                 }

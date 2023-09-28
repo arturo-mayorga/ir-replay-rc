@@ -57,6 +57,7 @@ add_executable(
     src/systems/replay-director-system.cpp
     src/systems/window-rendering-sys.cpp
     src/systems/timing-tower-sys.cpp
+    src/systems/current-driver-overlay-sys.cpp
 )
 
 TARGET_LINK_LIBRARIES(camdir)

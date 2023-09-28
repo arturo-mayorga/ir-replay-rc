@@ -11,6 +11,8 @@
 #include <locale>
 #include <codecvt>
 
+// #define TEST_TOWER_MODE 1
+
 struct TowerEntry
 {
     TowerEntry(std::wstring _p,
@@ -41,7 +43,7 @@ struct ColWidths
     int pit;
 };
 
-const ColWidths w(10, 15, 25, 190, 65, 10);
+const ColWidths w(10, 15, 25, 130, 65, 10); ///    120    130    140
 const int h = 20;
 const int headerHeight = w.m + 55;
 
@@ -98,11 +100,35 @@ int getCurrentLap(ECS::World *world)
     return currLap;
 }
 
+std::wstring trimString_TimingTowerSystem(const std::wstring &input, int maxLen)
+{
+    if (input.size() <= maxLen)
+    {
+        return input;
+    }
+
+    return input.substr(0, maxLen - 1).append(L"...");
+}
+
 std::vector<TowerEntrySP> getTowerEntries(ECS::World *world)
 {
-    std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
-
     std::vector<TowerEntrySP> ret;
+#ifdef TEST_TOWER_MODE
+
+    ret.push_back(TowerEntrySP(new TowerEntry(L"   1", L"444", L"Qio-Tiago Marteau", L"Leader", L"0", 1)));
+
+    for (int i = 2; i < 45; ++i)
+    {
+        std::wstringstream p;
+        if (i < 10)
+        {
+            p << L"   ";
+        }
+        p << i;
+        ret.push_back(TowerEntrySP(new TowerEntry(p.str(), L"444", L"Jesper Sandstrom", L"+2.372", L"0", 1)));
+    }
+#else
+    std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> converter;
 
     std::vector<DynamicCarStateComponentSP> states;
 
@@ -121,10 +147,6 @@ std::vector<TowerEntrySP> getTowerEntries(ECS::World *world)
     std::sort(states.begin(), states.end(), [](DynamicCarStateComponentSP &a, DynamicCarStateComponentSP &b)
               { return (a->currentLap == b->currentLap) ? a->lapDistPct > b->lapDistPct : a->currentLap > b->currentLap; });
 
-    // for reference
-    // ret.push_back(TowerEntrySP(new TowerEntry(L"1", L"444", L"Qio-Tiago Marteau", L"Leader", L"0", 1)));
-    // ret.push_back(TowerEntrySP(new TowerEntry(L"2", L"444", L"Jesper Sandström", L"+2.372", L"0", 1)));
-
     int i = 0;
     for (auto state : states)
     {
@@ -140,9 +162,10 @@ std::vector<TowerEntrySP> getTowerEntries(ECS::World *world)
             }
             pos << i;
 
-            ret.push_back(TowerEntrySP(new TowerEntry(pos.str(), L"???", converter.from_bytes(idx2name[cidx]), L"???", L"?", 1)));
+            ret.push_back(TowerEntrySP(new TowerEntry(pos.str(), L"???", trimString_TimingTowerSystem(converter.from_bytes(idx2name[cidx]), 15), L"???", L"?", 1)));
         }
     }
+#endif
 
     return ret;
 }
@@ -249,8 +272,6 @@ void TimingTowerSystem::updateTables(ECS::World *world)
 
 void TimingTowerSystem::configure(class ECS::World *world)
 {
-
-    std::cout << "tower configure" << std::endl;
     _canvasEnt = NULL;
 }
 
@@ -262,7 +283,6 @@ void TimingTowerSystem::tick(class ECS::World *world, float deltaTime)
 {
     if (NULL == _canvasEnt)
     {
-        std::cout << "here 2" << std::endl;
         createWindow(world);
     }
 
