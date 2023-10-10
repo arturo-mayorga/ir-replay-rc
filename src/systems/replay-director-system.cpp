@@ -26,8 +26,8 @@ void playSoundForTime(int time)
     std::wstringstream sout;
     sout << L"open \"script_" << time << L".wav\" type mpegvideo alias mp3";
     std::wcout << L"playing: " << sout.str() << std::endl;
-    mciSendString((LPCWSTR)(sout.str().c_str()), NULL, 0, NULL);
-    mciSendString((LPCWSTR) "play mp3 wait", NULL, 0, NULL);
+    mciSendString((sout.str().c_str()), NULL, 0, NULL);
+    mciSendString(L"play mp3 wait", NULL, 0, NULL);
     mciSendString(L"close mp3", NULL, 0, NULL);
     std::wcout << L"audio finished" << std::endl;
 }

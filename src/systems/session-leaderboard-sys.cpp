@@ -27,6 +27,7 @@ void SessionLeaderBoardSystem::tick(class ECS::World *world, float deltaTime)
     leaderBoard->carsByPosition.clear();
 
     int currentLap = 0;
+    int totalLaps = ECSUtil::getFirstCmp<SessionComponentSP>(world)->lapCount;
 
     world->each<
         DynamicCarStateComponentSP,
@@ -48,12 +49,25 @@ void SessionLeaderBoardSystem::tick(class ECS::World *world, float deltaTime)
 
     leaderBoard->currentLap = currentLap;
 
+    auto sessionResultComp = ECSUtil::getFirstCmp<SessionResultComponentSP>(world);
+
     std::sort(
         leaderBoard->carsByPosition.begin(), leaderBoard->carsByPosition.end(),
-        [](ECS::Entity *a, ECS::Entity *b)
+        [&](ECS::Entity *a, ECS::Entity *b)
         {
             auto aD = a->get<DynamicCarStateComponentSP>().get();
             auto bD = b->get<DynamicCarStateComponentSP>().get();
+
+            // auto aS = a->get<StaticCarStateComponentSP>().get();
+            // auto bS = b->get<StaticCarStateComponentSP>().get();
+
+            // return sessionResultComp->carIndex2Position[aS->idx] < sessionResultComp->carIndex2Position[bS->idx];
+
+            if (currentLap > totalLaps)
+            {
+                return sessionResultComp->carIndex2Position[aD->idx] < sessionResultComp->carIndex2Position[bD->idx];
+            }
+
             return (aD->currentLap == bD->currentLap) ? aD->lapDistPct > bD->lapDistPct : aD->currentLap > bD->currentLap;
         });
 }

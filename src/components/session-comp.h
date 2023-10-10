@@ -3,6 +3,7 @@
 
 #include "../ecs.h"
 #include <string>
+#include <map>
 
 struct SessionComponent
 {
@@ -16,6 +17,17 @@ struct SessionComponent
 };
 ECS_DEFINE_TYPE(SessionComponent);
 typedef std::shared_ptr<SessionComponent> SessionComponentSP;
+
+struct SessionResultComponent
+{
+    ECS_DECLARE_TYPE;
+
+    SessionResultComponent() {}
+
+    std::map<int, int> carIndex2Position;
+};
+ECS_DEFINE_TYPE(SessionResultComponent);
+typedef std::shared_ptr<SessionResultComponent> SessionResultComponentSP;
 
 struct SessionLeaderBoardComponent
 {

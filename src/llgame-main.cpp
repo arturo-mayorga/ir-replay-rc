@@ -23,7 +23,7 @@ CameraScriptComponentSP loadScript(ECS::World *world)
 {
     std::cout << "Loading Script..." << std::endl;
     int scriptItemCount = 0;
-    // std::cin >> scriptItemCount;
+    std::cin >> scriptItemCount;
 
     ECS::Entity *camScriptEnt = world->create();
     auto camScript = camScriptEnt->assign<CameraScriptComponentSP>(new CameraScriptComponent()).get();
@@ -53,6 +53,7 @@ int main()
     ent->assign<CameraActualsComponentSP>(new CameraActualsComponent());
     ent->assign<CameraDirectionSubTargetsComponentSP>(new CameraDirectionSubTargetsComponent());
     ent->assign<SessionComponentSP>(new SessionComponent());
+    ent->assign<SessionResultComponentSP>(new SessionResultComponent());
     ent->assign<SessionLeaderBoardComponentSP>(new SessionLeaderBoardComponent());
 
     world->registerSystem(new IrTelemetrySystem());

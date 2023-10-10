@@ -155,7 +155,7 @@ void TimingTowerSystem::updateTables(ECS::World *world)
     int header2W = 97;
 
     int headerOffset = (int)((wd - header1W) / 2);
-    t1.get()->texts.push_back(TextInfoSP(new TextInfo(L"iGPF", headerOffset, 0, (int)(h * 2), 194, 194, 186)));
+    t1.get()->texts.push_back(TextInfoSP(new TextInfo(L"   iFL", headerOffset, 0, (int)(h * 2), 194, 194, 186)));
     t1.get()->texts.push_back(TextInfoSP(new TextInfo(L"RACE", headerOffset + (int)(h * 3.75), (int)(h * .35), (int)(h * 1.5), 154, 155, 150)));
 
     headerOffset = (int)((wd - header2W) / 2);

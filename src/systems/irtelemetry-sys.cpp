@@ -68,6 +68,102 @@ void monitorConnectionStatus()
     }
 }
 
+int getYamlInt(const char *yaml, const char *key)
+{
+    char valstr[512];
+    int valstrlen = 512;
+
+    const char *tVal = NULL;
+    int tValLen = 0;
+
+    if (parseYaml(yaml, key, &tVal, &tValLen))
+    {
+        int len = tValLen;
+        if (len > 512)
+            len = 512;
+
+        // copy what we can, even if buffer too small
+        memcpy(valstr, tVal, len);
+        valstr[len] = '\0'; // original string has no null termination...
+
+        return atoi(valstr);
+    }
+    else
+    {
+        return -1;
+    }
+}
+
+std::vector<std::map<int, int>> getSessionResultsMap(const char *yaml)
+{
+    char str[512];
+    int sessionI = 0;
+
+    std::vector<std::map<int, int>> ret;
+
+    std::cout << yaml << std::endl;
+
+    do
+    {
+        int positionI = 0;
+
+        std::map<int, int> sessionResults;
+
+        sprintf_s(str, 512, "SessionInfo:Sessions:SessionNum:{%d}SessionLaps:", sessionI);
+        int sessionCheck = getYamlInt(yaml, str);
+        do
+        {
+            if (positionI == 0)
+            {
+                sprintf_s(str, 512, "SessionInfo:Sessions:SessionNum:{%d}ResultsPositions:Position:", sessionI);
+            }
+            else
+            {
+                sprintf_s(str, 512, "SessionInfo:Sessions:SessionNum:{%d}ResultsPositions:Position:{%d}Position:", sessionI, positionI);
+            }
+            int p = getYamlInt(yaml, str);
+
+            if (positionI == 999999)
+            {
+                sprintf_s(str, 512, "SessionInfo:Sessions:SessionNum:{%d}ResultsPositions:Position:CarIdx:", sessionI);
+            }
+            else
+            {
+                sprintf_s(str, 512, "SessionInfo:Sessions:SessionNum:{%d}ResultsPositions:Position:{%d}CarIdx:", sessionI, positionI + 1);
+            }
+            int cIdx = getYamlInt(yaml, str);
+
+            ++positionI;
+            if (p < 0)
+            {
+                positionI = -1;
+            }
+            else
+            {
+                std::cout << "session " << sessionI << " Pos " << p << " car " << cIdx << std::endl;
+                sessionResults[cIdx] = p;
+            }
+        } while (positionI != -1);
+
+        std::cout << std::endl;
+
+        ++sessionI;
+
+        if (sessionCheck < 0)
+        {
+            sessionI = -1;
+        }
+        else
+        {
+            ret.push_back(sessionResults);
+        }
+    } while (sessionI != -1);
+
+    // std::cout << "done" << std::endl;
+
+    return ret;
+}
+
 std::map<int, int> getSessionLapCountMap(const char *yaml)
 {
     std::map<int, int> ret;
@@ -393,6 +489,7 @@ void IrTelemetrySystem::tick(class ECS::World *world, float deltaTime)
     static float tSinceIrData = 0;
     static std::map<int, std::string> sessionNameMap;
     static std::map<int, int> sessionLapsMap;
+    static std::vector<std::map<int, int>> sessionResultsMap;
     static int maxSessionIdx = -1;
 
     tSinceCamChange += deltaTime;
@@ -406,9 +503,12 @@ void IrTelemetrySystem::tick(class ECS::World *world, float deltaTime)
         {
             first = 0;
 
-            auto cStates = getStaticCarStates(irsdk_getSessionInfoStr());
-            sessionNameMap = getSessionNameMap(irsdk_getSessionInfoStr());
-            sessionLapsMap = getSessionLapCountMap(irsdk_getSessionInfoStr());
+            auto sessionInfoStr = irsdk_getSessionInfoStr();
+
+            auto cStates = getStaticCarStates(sessionInfoStr);
+            sessionNameMap = getSessionNameMap(sessionInfoStr);
+            sessionLapsMap = getSessionLapCountMap(sessionInfoStr);
+            sessionResultsMap = getSessionResultsMap(sessionInfoStr);
 
             for (auto it = sessionNameMap.begin(); it != sessionNameMap.end(); ++it)
             {
@@ -510,9 +610,19 @@ void IrTelemetrySystem::tick(class ECS::World *world, float deltaTime)
             });
 
         SessionComponentSP sessionComp = ECSUtil::getFirstCmp<SessionComponentSP>(world);
-        sessionComp->num = g_sessionNum.getInt() - maxSessionIdx;
-        sessionComp->name = sessionNameMap[sessionComp->num];
-        sessionComp->lapCount = sessionLapsMap[sessionComp->num];
+        if (sessionComp->num != g_sessionNum.getInt() - maxSessionIdx)
+        {
+            sessionComp->num = g_sessionNum.getInt() - maxSessionIdx;
+            sessionComp->name = sessionNameMap[sessionComp->num];
+            sessionComp->lapCount = sessionLapsMap[sessionComp->num];
+
+            SessionResultComponentSP sessionResultComp = ECSUtil::getFirstCmp<SessionResultComponentSP>(world);
+
+            if (g_sessionNum.getInt() >= 0)
+            {
+                sessionResultComp->carIndex2Position = sessionResultsMap[g_sessionNum.getInt()];
+            }
+        }
 
         tSinceIrData = 0;
 
