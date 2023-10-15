@@ -7,6 +7,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <sstream>
 
 #include "../ecs-util.h"
 
@@ -24,7 +25,7 @@ void ScraperSystem::unconfigure(class ECS::World *world)
     world->unsubscribeAll(this);
 }
 
-void wtab(std::ofstream &fstream, int depth, std::string tab)
+void wtab(std::ostream &fstream, int depth, std::string tab)
 {
     for (int i = 0; i < depth; ++i)
     {
@@ -33,7 +34,15 @@ void wtab(std::ofstream &fstream, int depth, std::string tab)
 }
 
 template <typename T>
-void writeArray(std::string name, std::vector<T> ta, void (*writer)(T, std::ofstream &, std::string, int, std::string, std::string), std::ofstream &fstream, std::string separator, int depth, std::string tab, std::string endl)
+void writeArray(
+    std::string name,
+    std::vector<T> ta,
+    void (*writer)(T, std::ostream &, std::string, int, std::string, std::string),
+    std::ostream &fstream,
+    std::string separator,
+    int depth,
+    std::string tab,
+    std::string endl)
 {
     wtab(fstream, depth++, tab);
 
@@ -47,6 +56,7 @@ void writeArray(std::string name, std::vector<T> ta, void (*writer)(T, std::ofst
     }
 
     size_t tCount = ta.size();
+
     int i = 0;
     for (auto t : ta)
     {
@@ -64,14 +74,14 @@ void writeArray(std::string name, std::vector<T> ta, void (*writer)(T, std::ofst
     fstream << "]" << separator << endl;
 }
 
-void writeTelemetry(TelemetrySP telem, std::ofstream &fstream, std::string separator, int depth, std::string tab, std::string endl)
+void writeTelemetry(TelemetrySP telem, std::ostream &fstream, std::string separator, int depth, std::string tab, std::string endl)
 {
     wtab(fstream, depth++, tab);
     fstream << "{"
             << "\"perc\":" << telem->percentPos << ",\"percD\":" << telem->percentPosDelta << ",\"t\":" << telem->time << "}" << separator << endl;
 }
 
-void writeLap(LapSP lap, std::ofstream &fstream, std::string separator, int depth, std::string tab, std::string endl)
+void writeLap(LapSP lap, std::ostream &fstream, std::string separator, int depth, std::string tab, std::string endl)
 {
     wtab(fstream, depth++, tab);
     fstream << "{" << endl;
@@ -85,7 +95,7 @@ void writeLap(LapSP lap, std::ofstream &fstream, std::string separator, int dept
     fstream << "}" << separator << endl;
 }
 
-void writeDriver(DriverSP driver, std::ofstream &fstream, std::string separator, int depth, std::string tab, std::string endl)
+void writeDriver(DriverSP driver, std::ostream &fstream, std::string separator, int depth, std::string tab, std::string endl)
 {
     wtab(fstream, depth++, tab);
     fstream << "{" << endl;
@@ -99,7 +109,7 @@ void writeDriver(DriverSP driver, std::ofstream &fstream, std::string separator,
     fstream << "}" << separator << endl;
 }
 
-void writeSession(SessionSP session, std::ofstream &fstream, std::string separator, int depth, std::string tab, std::string endl)
+void writeSession(SessionSP session, std::ostream &fstream, std::string separator, int depth, std::string tab, std::string endl)
 {
     if (session->drivers.size() > 0)
     {
@@ -112,19 +122,32 @@ void writeSession(SessionSP session, std::ofstream &fstream, std::string separat
         writeArray<DriverSP>("drivers", session->drivers, writeDriver, fstream, "", depth, tab, endl);
 
         wtab(fstream, --depth, tab);
-        fstream << "}" << endl;
+        fstream << "}" << separator << endl;
     }
+}
+
+std::ostream &ScraperSystem::getOutStream()
+{
+    std::stringstream fileName;
+
+    fileName << _currentSession->id << ".json";
+    this->_ofstream.open(fileName.str());
+    return this->_ofstream;
+}
+
+void ScraperSystem::closeOutStream()
+{
+    this->_ofstream.close();
 }
 
 void ScraperSystem::receive(ECS::World *world, const OnSaveTelemetryRequest &event)
 {
-    std::ofstream fstream;
-
-    fstream.open("out/example.json");
+    std::ostream &fstream = this->getOutStream();
 
     // writeArray<SessionSP>("", _sessions, writeSession, fstream, "", 0, "    ", "\n");
     writeArray<SessionSP>("", _sessions, writeSession, fstream, "", 0, "", "");
-    fstream.close();
+
+    this->closeOutStream();
 }
 
 void ScraperSystem::tick(class ECS::World *world, float deltaTime)
@@ -137,7 +160,7 @@ void ScraperSystem::tick(class ECS::World *world, float deltaTime)
     static std::map<int, LapSP> currentLapMap;
     static std::map<int, DriverSP> currentDriverMap;
 
-    static SessionSP currentSession(NULL);
+    // static SessionSP currentSession(NULL);
 
     if (first)
     {
@@ -161,10 +184,10 @@ void ScraperSystem::tick(class ECS::World *world, float deltaTime)
 
         currentSessionNum = sessionComponent->num;
 
-        currentSession = SessionSP(new Session());
-        currentSession->id = currentSessionNum;
+        _currentSession = SessionSP(new Session());
+        _currentSession->id = currentSessionNum;
 
-        _sessions.push_back(currentSession);
+        _sessions.push_back(_currentSession);
 
         world->each<StaticCarStateComponentSP>(
             [&](ECS::Entity *ent, ECS::ComponentHandle<StaticCarStateComponentSP> cStateH)
@@ -177,7 +200,7 @@ void ScraperSystem::tick(class ECS::World *world, float deltaTime)
                     DriverSP driver(new Driver());
                     driver->uid = cState->uid;
 
-                    currentSession->drivers.push_back(driver);
+                    _currentSession->drivers.push_back(driver);
 
                     currentDriverMap[cState->uid] = driver;
                     uid2trackPercent[cState->uid] = -1;

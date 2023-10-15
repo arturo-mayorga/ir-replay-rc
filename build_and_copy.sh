@@ -1,4 +1,4 @@
 #!/bin/bash
 
 ./build.sh
-cp build/Debug/camdir.exe /z/arturo/dev/bin-inbox/camdir.exe
+cp build/Debug/*.exe /z/arturo/dev/bin-inbox/

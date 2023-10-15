@@ -12,7 +12,7 @@
 
 #include <string>
 
-// #define TEST_TOWER_MODE 1
+#define TEST_TOWER_MODE 1
 
 struct TowerEntry
 {

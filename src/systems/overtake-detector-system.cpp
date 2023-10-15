@@ -14,10 +14,6 @@ void OvertakeDetectorSystem::unconfigure(class ECS::World *world) {}
 
 void OvertakeDetectorSystem::tick(class ECS::World *world, float deltaTime)
 {
-
-    std::map<int, std::string> idx2name = getIdx2nameMap(world);
-    std::map<int, float> idx2num = getIdx2numMap(world);
-
     std::vector<DynamicCarStateComponentSP> states;
 
     static std::map<int, int> carIdx2rtPos;

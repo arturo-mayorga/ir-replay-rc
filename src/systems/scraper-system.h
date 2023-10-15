@@ -4,6 +4,9 @@
 #include "../ecs.h"
 #include "../events/scraper-events.h"
 
+#include <fstream>
+#include <iostream>
+
 struct Telemetry
 {
     double percentPos;
@@ -36,8 +39,10 @@ typedef std::shared_ptr<Session> SessionSP;
 class ScraperSystem : public ECS::EntitySystem,
                       public ECS::EventSubscriber<OnSaveTelemetryRequest>
 {
-private:
+protected:
     std::vector<SessionSP> _sessions;
+    std::ofstream _ofstream;
+    SessionSP _currentSession;
 
 public:
     virtual ~ScraperSystem();
@@ -49,6 +54,9 @@ public:
     virtual void tick(class ECS::World *world, float deltaTime) override;
 
     virtual void receive(ECS::World *world, const OnSaveTelemetryRequest &event) override;
+
+    virtual std::ostream &getOutStream();
+    virtual void closeOutStream();
 };
 
 #endif
