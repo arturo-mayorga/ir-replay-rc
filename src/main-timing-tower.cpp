@@ -10,6 +10,7 @@
 #include "systems/session-leaderboard-sys.h"
 #include "systems/timing-tower-sys.h"
 #include "systems/current-driver-overlay-sys.h"
+#include "systems/replay-skip-graphic-sys.h"
 
 #include "components/car-comp.h"
 #include "components/session-comp.h"
@@ -32,8 +33,9 @@ int main()
     world->registerSystem(new IrTelemetrySystem());
     world->registerSystem(new SessionLeaderBoardSystem());
     world->registerSystem(new TimingTowerSystem());
-    world->registerSystem(new WindowRenderingSystem());
+    // world->registerSystem(new ReplaySkipGraphicSystem());
     world->registerSystem(new CurrentDriverOverlaySystem());
+    world->registerSystem(new WindowRenderingSystem());
 
     auto tPrev = GetTickCount();
 
@@ -41,7 +43,7 @@ int main()
     {
         auto t = GetTickCount();
         world->tick((float)(t - tPrev));
-        Sleep(100);
+        Sleep(1);
         tPrev = t;
     }
 

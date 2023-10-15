@@ -233,7 +233,7 @@ void WindowRenderingSystem::tick(class ECS::World *world, float deltaTime)
         DispatchMessage(&msg);
     }
 
-    if (redrawTimeAcc > 200)
+    if (redrawTimeAcc > 1)
     {
         for (auto it = _hwndToEntityMap.begin(); it != _hwndToEntityMap.end(); ++it)
         {

@@ -59,6 +59,7 @@ add_executable(
     src/systems/window-rendering-sys.cpp
     src/systems/timing-tower-sys.cpp
     src/systems/current-driver-overlay-sys.cpp
+    src/systems/replay-skip-graphic-sys.cpp
 )
 TARGET_LINK_LIBRARIES(ir-timing-tower)
 
