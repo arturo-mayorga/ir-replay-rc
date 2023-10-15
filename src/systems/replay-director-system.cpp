@@ -38,8 +38,6 @@ void ReplayDirectorSystem::unconfigure(class ECS::World *world) {}
 
 void ReplayDirectorSystem::tick(class ECS::World *world, float deltaTime)
 {
-    // std::cout << "ReplayDirectorSystem::tick" << std::endl;
-
     static int scriptItemIndex = -1;
     static ReplayState state = LOADING;
     static std::map<int, int> uid2driverIdx;
@@ -58,8 +56,6 @@ void ReplayDirectorSystem::tick(class ECS::World *world, float deltaTime)
             {
                 StaticCarStateComponentSP cState = cStateH.get();
                 uid2driverIdx[cState->uid] = cState->idx;
-
-                std::cout << "driver map " << cState->idx << " " << cState->uid << std::endl;
 
                 state = SEEKING_JUMP;
             });

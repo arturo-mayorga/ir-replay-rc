@@ -26,6 +26,7 @@ int main()
     ent->assign<CameraActualsComponentSP>(new CameraActualsComponent());
     ent->assign<SessionComponentSP>(new SessionComponent());
     ent->assign<SessionResultComponentSP>(new SessionResultComponent());
+
     ent->assign<SessionLeaderBoardComponentSP>(new SessionLeaderBoardComponent());
 
     world->registerSystem(new IrTelemetrySystem());

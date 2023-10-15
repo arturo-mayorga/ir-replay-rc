@@ -45,12 +45,13 @@ int main()
 {
     ECS::World *world = ECS::World::createWorld();
 
+    // todo: move the creation of this entity into the irtelemetry system
     ECS::Entity *ent = world->create();
     ent->assign<CameraActualsComponentSP>(new CameraActualsComponent());
-    ent->assign<CameraDirectionSubTargetsComponentSP>(new CameraDirectionSubTargetsComponent());
     ent->assign<SessionComponentSP>(new SessionComponent());
-    // ent->assign<SessionResultComponentSP>(new SessionResultComponent());
-    // ent->assign<SessionLeaderBoardComponentSP>(new SessionLeaderBoardComponent());
+    ent->assign<SessionResultComponentSP>(new SessionResultComponent());
+
+    ent->assign<CameraDirectionSubTargetsComponentSP>(new CameraDirectionSubTargetsComponent());
 
     world->registerSystem(new IrTelemetrySystem());
     world->registerSystem(new ReplayDirectorSystem());

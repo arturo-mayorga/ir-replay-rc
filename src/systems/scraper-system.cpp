@@ -217,12 +217,8 @@ void ScraperSystem::tick(class ECS::World *world, float deltaTime)
             DynamicCarStateComponentSP cState = cStateH.get();
             int uid = driverIdx2uid[cState->idx];
 
-            // if (uid == 575753)
-            //     std::cout << uid << " " << uid2currentLapNum[uid] << " " << cState->currentLap << "\n";
-
             if (uid2currentLapNum[uid] < cState->currentLap)
             {
-                // std::cout << "new lap\n";
                 LapSP lap(new Lap());
                 lap->lapNumber = cState->currentLap;
                 currentLapMap[uid] = lap;
@@ -232,12 +228,10 @@ void ScraperSystem::tick(class ECS::World *world, float deltaTime)
 
                 if (currentDriverMap[uid].get())
                 {
-                    // std::cout << "push lap " << uid << "\n";
                     currentDriverMap[uid]->laps.push_back(lap);
                 }
                 else
                 {
-                    // std::cout << "no driver for " << uid << "\n";
                 }
             }
 

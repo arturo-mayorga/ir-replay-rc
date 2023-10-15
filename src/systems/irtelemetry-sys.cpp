@@ -101,7 +101,7 @@ std::vector<std::map<int, int>> getSessionResultsMap(const char *yaml)
 
     std::vector<std::map<int, int>> ret;
 
-    std::cout << yaml << std::endl;
+    // std::cout << yaml << std::endl;
 
     do
     {
@@ -140,12 +140,9 @@ std::vector<std::map<int, int>> getSessionResultsMap(const char *yaml)
             }
             else
             {
-                std::cout << "session " << sessionI << " Pos " << p << " car " << cIdx << std::endl;
                 sessionResults[cIdx] = p;
             }
         } while (positionI != -1);
-
-        std::cout << std::endl;
 
         ++sessionI;
 
@@ -158,8 +155,6 @@ std::vector<std::map<int, int>> getSessionResultsMap(const char *yaml)
             ret.push_back(sessionResults);
         }
     } while (sessionI != -1);
-
-    // std::cout << "done" << std::endl;
 
     return ret;
 }
@@ -194,8 +189,6 @@ std::map<int, int> getSessionLapCountMap(const char *yaml)
 
             int sessionLaps = atoi(valstr);
             int sessionNum = -1;
-
-            // std::cout << " session data :: " << name << " ";
 
             if (i == 0)
             {
@@ -268,8 +261,6 @@ std::map<int, std::string> getSessionNameMap(const char *yaml)
 
             std::string name(valstr);
             int sessionNum = -1;
-
-            // std::cout << " session data :: " << name << " ";
 
             if (i == 0)
             {
@@ -347,8 +338,6 @@ std::map<int, StaticCarStateComponentSP> getStaticCarStates(const char *yaml)
             cState->name = valstr;
 
             cState->name.erase(remove_if(cState->name.begin(), cState->name.end(), invalidChar), cState->name.end());
-
-            // std::cout << ":: " << valstr << " ";
 
             if (i == 0)
             {
@@ -434,7 +423,6 @@ void IrTelemetrySystem::receive(ECS::World *world, const OnFrameNumChangeRequest
     int actual = 0;
     while (event.frameNum != actual)
     {
-        // std::cout << "waiting for frame " << event.frameNum << " got " << actual << std::endl;
         irsdkClient::instance().waitForData(16);
         actual = g_replayFrameNum.getInt();
         Sleep(100);
@@ -518,8 +506,6 @@ void IrTelemetrySystem::tick(class ECS::World *world, float deltaTime)
                 }
             }
 
-            // std::cout << "there were " << cStates.size() << " cars" << std::endl;
-
             std::set<int> existingCarIdxs;
 
             std::vector<ECS::Entity *> entsToDestroy;
@@ -545,11 +531,9 @@ void IrTelemetrySystem::tick(class ECS::World *world, float deltaTime)
             {
                 if (existingCarIdxs.count(pair.first))
                 {
-                    // std::cout << "found car for " << pair.second->name << std::endl;
                 }
                 else
                 {
-                    // std::cout << "creating car for " << pair.second->name << " " << pair.second->idx << std::endl;
 
                     ECS::Entity *ent = world->create();
                     auto staticCarState = ent->assign<StaticCarStateComponentSP>(new StaticCarStateComponent());
@@ -578,7 +562,6 @@ void IrTelemetrySystem::tick(class ECS::World *world, float deltaTime)
 
                 if (i >= 0)
                 {
-                    // std::cout << "getting dynamic info for " << i << std::endl;
                     float oldLapPct = cState->lapDistPct;
                     cState->lapDistPct = g_CarIdxLapDistPct.getFloat(i);
                     cState->officialPos = (int)g_carIdxClassPosition.getFloat(i);
@@ -605,7 +588,6 @@ void IrTelemetrySystem::tick(class ECS::World *world, float deltaTime)
                 }
                 else
                 {
-                    // std::cout << "got a bad idx\n";
                 }
             });
 
@@ -620,6 +602,7 @@ void IrTelemetrySystem::tick(class ECS::World *world, float deltaTime)
 
             if (g_sessionNum.getInt() >= 0)
             {
+                // std::cout << sessionResultComp.get() << std::endl;
                 sessionResultComp->carIndex2Position = sessionResultsMap[g_sessionNum.getInt()];
             }
         }

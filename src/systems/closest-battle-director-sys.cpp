@@ -28,7 +28,6 @@ void ClosestBattleDirectorSystem::tick(class ECS::World *world, float deltaTime)
         [&](ECS::Entity *ent, ECS::ComponentHandle<DynamicCarStateComponentSP> cStateH)
         {
             DynamicCarStateComponentSP cState = cStateH.get();
-            // std::cout << "pit info: " << cState->isInPits << std::endl;
 
             if (cState->isInPits == 0 && cState->deltaLapDistPct * 100000 > MIN_PCT_DELTA)
             {
