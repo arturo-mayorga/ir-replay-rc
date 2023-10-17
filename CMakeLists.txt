@@ -54,6 +54,7 @@ add_executable(
     src/irsdk/yaml_parser.cpp
     src/components/rendering-comp.cpp
     src/systems/irtelemetry-sys.cpp
+    src/systems/irtelemetry-fake-sys.cpp
     src/systems/replay-director-system.cpp
     src/systems/session-leaderboard-sys.cpp
     src/systems/window-rendering-sys.cpp
@@ -93,6 +94,7 @@ add_executable(
     src/txt-view/tv-driver-table.cpp
     src/txt-view/simple-label.cpp
     src/systems/irtelemetry-sys.cpp
+    src/systems/irtelemetry-fake-sys.cpp
     src/systems/overtake-detector-system.cpp
     src/systems/incident-detector-system.cpp
     src/systems/closest-battle-director-sys.cpp

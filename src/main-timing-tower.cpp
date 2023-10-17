@@ -6,6 +6,7 @@
 #include <sysinfoapi.h>
 
 #include "systems/irtelemetry-sys.h"
+#include "systems/irtelemetry-fake-sys.h"
 #include "systems/window-rendering-sys.h"
 #include "systems/session-leaderboard-sys.h"
 #include "systems/timing-tower-sys.h"

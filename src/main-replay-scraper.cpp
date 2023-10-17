@@ -5,6 +5,7 @@
 #include <sysinfoapi.h>
 
 #include "systems/irtelemetry-sys.h"
+#include "systems/irtelemetry-fake-sys.h"
 #include "systems/overtake-detector-system.h"
 #include "systems/incident-detector-system.h"
 #include "systems/closest-battle-director-sys.h"
@@ -27,7 +28,7 @@ int main()
 {
     ECS::World *world = ECS::World::createWorld();
 
-    world->registerSystem(new IrTelemetrySystem());
+    world->registerSystem(new IrTelemetryFakeSystem());
     world->registerSystem(new OvertakeDetectorSystem());
     world->registerSystem(new IncidentDetectorSystem());
     world->registerSystem(new BroadcastCarInfoCollectorSystem());
@@ -45,6 +46,7 @@ int main()
     ent->assign<CameraDirectionSubTargetsComponentSP>(new CameraDirectionSubTargetsComponent());
     ent->assign<ApplicationStateComponentSP>(new ApplicationStateComponent());
     ent->assign<SessionComponentSP>(new SessionComponent());
+    ent->assign<SessionResultComponentSP>(new SessionResultComponent());
     ent->assign<OvertakeSummaryComponentSP>(new OvertakeSummaryComponent());
     ent->assign<DetectedIncidentSummaryComponentSP>(new DetectedIncidentSummaryComponent());
 
