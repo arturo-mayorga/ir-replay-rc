@@ -43,6 +43,8 @@ protected:
     std::vector<SessionSP> _sessions;
     std::ofstream _ofstream;
     SessionSP _currentSession;
+    int _subsessionId = -1;
+    int _isFinished = 0;
 
 public:
     virtual ~ScraperSystem();
@@ -57,6 +59,7 @@ public:
 
     virtual std::ostream &getOutStream();
     virtual void closeOutStream();
+    int isFinished() { return _isFinished; }
 };
 
 #endif

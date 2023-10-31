@@ -2,7 +2,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "ir-timing-tower Debug",
+            "name": "ir-timing-tower (Debug)",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/Debug/ir-timing-tower.exe",
@@ -25,7 +25,7 @@
             }
         },
         {
-            "name": "ir-replay-rc Debug",
+            "name": "ir-replay-rc (Debug)",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/Debug/ir-replay-rc.exe",
@@ -48,7 +48,7 @@
             }
         },
         {
-            "name": "ir-replay-scraper Debug",
+            "name": "ir-replay-scraper (Debug)",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/Debug/ir-replay-scraper.exe",
@@ -71,7 +71,7 @@
             }
         },
         {
-            "name": "tests Debug",
+            "name": "tests (Debug)",
             "type": "cppvsdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/Debug/tests.exe",

@@ -9,10 +9,11 @@ struct SessionComponent
 {
     ECS_DECLARE_TYPE;
 
-    SessionComponent() : num(0), lapCount(0), name("") {}
+    SessionComponent() : num(0), lapCount(0), subsessionId(0), name("") {}
 
     int num;
     int lapCount;
+    int subsessionId;
     std::string name;
 };
 ECS_DEFINE_TYPE(SessionComponent);

@@ -10,7 +10,6 @@
 #include "systems/incident-detector-system.h"
 #include "systems/closest-battle-director-sys.h"
 #include "systems/broadcast-car-info-collector-sys.h"
-#include "systems/tui-sys.h"
 #include "systems/broadcast-summary-sys.h"
 #include "systems/tv-point-director-sys.h"
 #include "systems/head-of-direction-sys.h"
@@ -28,31 +27,19 @@ int main()
 {
     ECS::World *world = ECS::World::createWorld();
 
-    world->registerSystem(new IrTelemetryFakeSystem());
-    world->registerSystem(new OvertakeDetectorSystem());
-    world->registerSystem(new IncidentDetectorSystem());
-    world->registerSystem(new BroadcastCarInfoCollectorSystem());
-    world->registerSystem(new BroadcastSummarySystem());
-    world->registerSystem(new TvPointDirectorSystem());
-    world->registerSystem(new ClosestBattleDirectorSystem());
-    world->registerSystem(new HeadOfDirectionSystem());
-    world->registerSystem(new ScraperSystem());
+    ScraperSystem *scraperSystem;
 
-    TuiSystem *tui = new TuiSystem();
-    world->registerSystem(tui);
+    world->registerSystem(new IrTelemetrySystem());
+    world->registerSystem(scraperSystem = new ScraperSystem());
 
     ECS::Entity *ent = world->create();
     ent->assign<CameraActualsComponentSP>(new CameraActualsComponent());
-    ent->assign<CameraDirectionSubTargetsComponentSP>(new CameraDirectionSubTargetsComponent());
-    ent->assign<ApplicationStateComponentSP>(new ApplicationStateComponent());
     ent->assign<SessionComponentSP>(new SessionComponent());
     ent->assign<SessionResultComponentSP>(new SessionResultComponent());
-    ent->assign<OvertakeSummaryComponentSP>(new OvertakeSummaryComponent());
-    ent->assign<DetectedIncidentSummaryComponentSP>(new DetectedIncidentSummaryComponent());
 
     auto tPrev = GetTickCount();
 
-    while (!tui->isFinished())
+    while (!scraperSystem->isFinished())
     {
         auto t = GetTickCount();
         world->tick((float)(t - tPrev));

@@ -130,7 +130,7 @@ std::ostream &ScraperSystem::getOutStream()
 {
     std::stringstream fileName;
 
-    fileName << _currentSession->id << ".json";
+    fileName << _subsessionId << ".json";
     this->_ofstream.open(fileName.str());
     return this->_ofstream;
 }
@@ -148,6 +148,9 @@ void ScraperSystem::receive(ECS::World *world, const OnSaveTelemetryRequest &eve
     writeArray<SessionSP>("", _sessions, writeSession, fstream, "", 0, "", "");
 
     this->closeOutStream();
+
+    std::cout << "scraping complete" << std::endl;
+    _isFinished = true;
 }
 
 void ScraperSystem::tick(class ECS::World *world, float deltaTime)
@@ -159,8 +162,6 @@ void ScraperSystem::tick(class ECS::World *world, float deltaTime)
     static std::map<int, int> uid2currentLapNum;
     static std::map<int, LapSP> currentLapMap;
     static std::map<int, DriverSP> currentDriverMap;
-
-    // static SessionSP currentSession(NULL);
 
     if (first)
     {
@@ -174,10 +175,13 @@ void ScraperSystem::tick(class ECS::World *world, float deltaTime)
                 std::cout << "driver map " << cState->idx << " " << cState->uid << "\n";
             });
 
+        std::cout << "ready to scrape" << std::endl;
+
         return;
     }
 
     auto sessionComponent = ECSUtil::getFirstCmp<SessionComponentSP>(world);
+    _subsessionId = sessionComponent->subsessionId;
 
     if (currentSessionNum != sessionComponent->num)
     {
@@ -250,4 +254,9 @@ void ScraperSystem::tick(class ECS::World *world, float deltaTime)
                 }
             }
         });
+
+    if (cameraActualsComponent->replayFrameNumEnd == 1)
+    {
+        world->emit<OnSaveTelemetryRequest>(OnSaveTelemetryRequest());
+    }
 }

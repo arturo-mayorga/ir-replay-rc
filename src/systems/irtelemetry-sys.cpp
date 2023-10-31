@@ -94,14 +94,17 @@ int getYamlInt(const char *yaml, const char *key)
     }
 }
 
+int getSubsessionId(const char *yaml)
+{
+    return getYamlInt(yaml, "WeekendInfo:SubSessionID:");
+}
+
 std::vector<std::map<int, int>> getSessionResultsMap(const char *yaml)
 {
     char str[512];
     int sessionI = 0;
 
     std::vector<std::map<int, int>> ret;
-
-    // std::cout << yaml << std::endl;
 
     do
     {
@@ -208,7 +211,6 @@ std::map<int, int> getSessionLapCountMap(const char *yaml)
                 memcpy(valstr, tVal, len);
                 valstr[len] = '\0'; // original string has no null termination...
                 sessionNum = atoi(valstr);
-                // std::cout << sessionNum << "\n";
             }
 
             inter[sessionNum] = sessionLaps;
@@ -280,7 +282,6 @@ std::map<int, std::string> getSessionNameMap(const char *yaml)
                 memcpy(valstr, tVal, len);
                 valstr[len] = '\0'; // original string has no null termination...
                 sessionNum = atoi(valstr);
-                // std::cout << sessionNum << "\n";
             }
 
             inter[sessionNum] = name;
@@ -357,7 +358,6 @@ std::map<int, StaticCarStateComponentSP> getStaticCarStates(const char *yaml)
                 memcpy(valstr, tVal, len);
                 valstr[len] = '\0'; // original string has no null termination...
                 cState->idx = atoi(valstr);
-                // std::cout << valstr << "\n";
             }
 
             sprintf_s(str, 512, "DriverInfo:Drivers:CarIdx:{%d}UserID:", i);
@@ -479,6 +479,7 @@ void IrTelemetrySystem::tick(class ECS::World *world, float deltaTime)
     static std::map<int, int> sessionLapsMap;
     static std::vector<std::map<int, int>> sessionResultsMap;
     static int maxSessionIdx = -1;
+    static int subsessionId = -1;
 
     tSinceCamChange += deltaTime;
     tSinceIrData += deltaTime;
@@ -497,6 +498,7 @@ void IrTelemetrySystem::tick(class ECS::World *world, float deltaTime)
             sessionNameMap = getSessionNameMap(sessionInfoStr);
             sessionLapsMap = getSessionLapCountMap(sessionInfoStr);
             sessionResultsMap = getSessionResultsMap(sessionInfoStr);
+            subsessionId = getSubsessionId(sessionInfoStr);
 
             for (auto it = sessionNameMap.begin(); it != sessionNameMap.end(); ++it)
             {
@@ -592,6 +594,7 @@ void IrTelemetrySystem::tick(class ECS::World *world, float deltaTime)
             });
 
         SessionComponentSP sessionComp = ECSUtil::getFirstCmp<SessionComponentSP>(world);
+        sessionComp->subsessionId = subsessionId;
         if (sessionComp->num != g_sessionNum.getInt() - maxSessionIdx)
         {
             sessionComp->num = g_sessionNum.getInt() - maxSessionIdx;
@@ -602,7 +605,6 @@ void IrTelemetrySystem::tick(class ECS::World *world, float deltaTime)
 
             if (g_sessionNum.getInt() >= 0)
             {
-                // std::cout << sessionResultComp.get() << std::endl;
                 sessionResultComp->carIndex2Position = sessionResultsMap[g_sessionNum.getInt()];
             }
         }

@@ -89,7 +89,7 @@ std::vector<float> IrTelemetryFakeSystem_getCarSpeeds(int numCars)
     for (int i = 0; i < numCars; ++i)
     {
         // reduce the percent per frame by a random amount between 0 and 3%
-        float percentPerFrameRand = percentPerFrame * (1 - (rand() % 3) / 100.0);
+        float percentPerFrameRand = (float)(percentPerFrame * (1 - (rand() % 3) / 100.0));
         ret.push_back(percentPerFrameRand);
     }
 
