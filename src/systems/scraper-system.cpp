@@ -78,7 +78,16 @@ void writeTelemetry(TelemetrySP telem, std::ostream &fstream, std::string separa
 {
     wtab(fstream, depth++, tab);
     fstream << "{"
-            << "\"perc\":" << telem->percentPos << ",\"percD\":" << telem->percentPosDelta << ",\"t\":" << telem->time << "}" << separator << endl;
+            << "\"perc\":" << telem->percentPos << ",\"percD\":";
+    if (std::isfinite(telem->percentPosDelta))
+    {
+        fstream << telem->percentPosDelta;
+    }
+    else
+    {
+        fstream << "null";
+    }
+    fstream << ",\"t\":" << telem->time << "}" << separator << endl;
 }
 
 void writeLap(LapSP lap, std::ostream &fstream, std::string separator, int depth, std::string tab, std::string endl)

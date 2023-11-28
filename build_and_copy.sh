@@ -1,4 +1,4 @@
 #!/bin/bash
 
 ./build.sh
-cp build/Release/*.exe /z/arturo/dev/bin-inbox/
+cp -v build/Release/ir*.exe /z/arturo/dev/bin-inbox/
