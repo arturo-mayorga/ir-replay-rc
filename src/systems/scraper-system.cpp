@@ -74,6 +74,38 @@ void writeArray(
     fstream << "]" << separator << endl;
 }
 
+void writeEpochTelemetryDriverDatum(EpochTelemetryDriverDatumSP datum, std::ostream &fstream, std::string separator, int depth, std::string tab, std::string endl)
+{
+    wtab(fstream, depth++, tab);
+    fstream << "{" << endl;
+
+    wtab(fstream, depth, tab);
+    fstream << "\"uid\":" << datum->uid << "," << endl;
+
+    wtab(fstream, depth, tab);
+    fstream << "\"percentPos\":" << datum->percentPos << "," << endl;
+
+    wtab(fstream, depth, tab);
+    fstream << "\"percentPosDelta\":" << datum->percentPosDelta << "" << endl;
+
+    wtab(fstream, --depth, tab);
+    fstream << "}" << separator << endl;
+}
+
+void writeEpochTelemetryData(EpochTelemetryDataSP eTelemData, std::ostream &fstream, std::string separator, int depth, std::string tab, std::string endl)
+{
+    wtab(fstream, depth++, tab);
+    fstream << "{" << endl;
+
+    wtab(fstream, depth, tab);
+    fstream << "\"time\":" << eTelemData->time << "," << endl;
+
+    writeArray<EpochTelemetryDriverDatumSP>("data", eTelemData->data, writeEpochTelemetryDriverDatum, fstream, "", depth, tab, endl);
+
+    wtab(fstream, --depth, tab);
+    fstream << "}" << separator << endl;
+}
+
 void writeTelemetry(TelemetrySP telem, std::ostream &fstream, std::string separator, int depth, std::string tab, std::string endl)
 {
     wtab(fstream, depth++, tab);
@@ -104,6 +136,23 @@ void writeLap(LapSP lap, std::ostream &fstream, std::string separator, int depth
     fstream << "}" << separator << endl;
 }
 
+void writeEpochTelemetry(EpochTelemetrySP epochTelemetry, std::ostream &fstream, std::string separator, int depth, std::string tab, std::string endl)
+{
+    wtab(fstream, depth++, tab);
+    fstream << "{" << endl;
+
+    wtab(fstream, depth, tab);
+    fstream << "\"numLaps\":" << epochTelemetry->numLaps << "," << endl;
+
+    wtab(fstream, depth, tab);
+    fstream << "\"checkeredFlagTime\":" << epochTelemetry->checkeredFlagTime << "," << endl;
+
+    writeArray<EpochTelemetryDataSP>("epochList", epochTelemetry->epochList, writeEpochTelemetryData, fstream, "", depth, tab, endl);
+
+    wtab(fstream, --depth, tab);
+    fstream << "}" << separator << endl;
+}
+
 void writeDriver(DriverSP driver, std::ostream &fstream, std::string separator, int depth, std::string tab, std::string endl)
 {
     wtab(fstream, depth++, tab);
@@ -128,7 +177,11 @@ void writeSession(SessionSP session, std::ostream &fstream, std::string separato
         wtab(fstream, depth, tab);
         fstream << "\"id\":" << session->id << "," << endl;
 
-        writeArray<DriverSP>("drivers", session->drivers, writeDriver, fstream, "", depth, tab, endl);
+        writeArray<DriverSP>("drivers", session->drivers, writeDriver, fstream, ",", depth, tab, endl);
+
+        wtab(fstream, depth, tab);
+        fstream << "\"epochTelemetry\":" << endl;
+        writeEpochTelemetry(session->epochTelemetry, fstream, "", depth, tab, endl);
 
         wtab(fstream, --depth, tab);
         fstream << "}" << separator << endl;
@@ -153,7 +206,7 @@ void ScraperSystem::receive(ECS::World *world, const OnSaveTelemetryRequest &eve
 {
     std::ostream &fstream = this->getOutStream();
 
-    // writeArray<SessionSP>("", _sessions, writeSession, fstream, "", 0, "    ", "\n");
+    // writeArray<SessionSP>("", _sessions, writeSession, std::cout, "", 0, "    ", "\n");
     writeArray<SessionSP>("", _sessions, writeSession, fstream, "", 0, "", "");
 
     this->closeOutStream();
@@ -166,6 +219,7 @@ void ScraperSystem::tick(class ECS::World *world, float deltaTime)
 {
     static int first = 1;
     static int currentSessionNum = -999;
+    static int prevEpochFrameNum = -1;
     static std::map<int, int> driverIdx2uid;
     static std::map<int, double> uid2trackPercent;
     static std::map<int, int> uid2currentLapNum;
@@ -190,12 +244,14 @@ void ScraperSystem::tick(class ECS::World *world, float deltaTime)
     }
 
     auto sessionComponent = ECSUtil::getFirstCmp<SessionComponentSP>(world);
+    auto cameraActualsComponent = ECSUtil::getFirstCmp<CameraActualsComponentSP>(world);
+
     _subsessionId = sessionComponent->subsessionId;
 
     if (currentSessionNum != sessionComponent->num)
     {
-
         currentSessionNum = sessionComponent->num;
+        prevEpochFrameNum = cameraActualsComponent->replayFrameNum;
 
         _currentSession = SessionSP(new Session());
         _currentSession->id = currentSessionNum;
@@ -209,7 +265,6 @@ void ScraperSystem::tick(class ECS::World *world, float deltaTime)
 
                 if (cState->uid > 0)
                 {
-
                     DriverSP driver(new Driver());
                     driver->uid = cState->uid;
 
@@ -221,8 +276,6 @@ void ScraperSystem::tick(class ECS::World *world, float deltaTime)
                 }
             });
     }
-
-    auto cameraActualsComponent = ECSUtil::getFirstCmp<CameraActualsComponentSP>(world);
 
     world->each<DynamicCarStateComponentSP>(
         [&](ECS::Entity *ent, ECS::ComponentHandle<DynamicCarStateComponentSP> cStateH)
@@ -263,6 +316,32 @@ void ScraperSystem::tick(class ECS::World *world, float deltaTime)
                 }
             }
         });
+
+    // save epoch data every 60 frames
+    if (cameraActualsComponent->replayFrameNum >= prevEpochFrameNum + 60)
+    {
+        std::cout << "saving epoch data " << cameraActualsComponent->replayFrameNum << std::endl;
+        auto epoch = EpochTelemetryDataSP(new EpochTelemetryData());
+        epoch->time = cameraActualsComponent->replayFrameNum;
+
+        _currentSession->epochTelemetry->epochList.push_back(epoch);
+
+        world->each<DynamicCarStateComponentSP>(
+            [&](ECS::Entity *ent, ECS::ComponentHandle<DynamicCarStateComponentSP> cStateH)
+            {
+                DynamicCarStateComponentSP cState = cStateH.get();
+                int uid = driverIdx2uid[cState->idx];
+
+                auto datum = EpochTelemetryDriverDatumSP(new EpochTelemetryDriverDatum());
+                datum->uid = uid;
+                datum->percentPos = cState->currentLap + cState->lapDistPct;
+                datum->percentPosDelta = cState->deltaLapDistPct;
+
+                epoch->data.push_back(datum);
+            });
+
+        prevEpochFrameNum = cameraActualsComponent->replayFrameNum;
+    }
 
     if (cameraActualsComponent->replayFrameNumEnd == 1)
     {

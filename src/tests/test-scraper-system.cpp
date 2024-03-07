@@ -41,7 +41,6 @@ void TestScraperSystem::closeOutStream() {}
 
 TEST(ScraperSystemTests, MainScraperTests)
 {
-
     int success = 0;
     int fail = 0;
 
@@ -82,7 +81,7 @@ TEST(ScraperSystemTests, MainScraperTests)
     sys->resetStream();
     sys->receive(NULL, e);
 
-    EXPECT_EQ(sys->getString(), "[{\"id\":321,\"drivers\":[{\"id\":123,\"laps\":[]}]}]");
+    EXPECT_EQ(sys->getString(), "[{\"id\":321,\"drivers\":[{\"id\":123,\"laps\":[]}],\"epochTelemetry\":{\"numLaps\":0,\"checkeredFlagTime\":0,\"epochList\":[]}}]");
 
     /////////////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////
@@ -100,10 +99,41 @@ TEST(ScraperSystemTests, MainScraperTests)
     sys->resetStream();
     sys->receive(NULL, e);
 
-    EXPECT_EQ(sys->getString(), "[{\"id\":321,\"drivers\":[{\"id\":123,\"laps\":[]}]},{\"id\":432,\"drivers\":[{\"id\":234,\"laps\":[]}]}]");
+    EXPECT_EQ(sys->getString(), "[{\"id\":321,\"drivers\":[{\"id\":123,\"laps\":[]}],\"epochTelemetry\":{\"numLaps\":0,\"checkeredFlagTime\":0,\"epochList\":[]}},{\"id\":432,\"drivers\":[{\"id\":234,\"laps\":[]}],\"epochTelemetry\":{\"numLaps\":0,\"checkeredFlagTime\":0,\"epochList\":[]}}]");
 
     /////////////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////
+
+    SessionSP ses3(new Session);
+    ses3->id = 432;
+
+    ses3->drivers.push_back(d2);
+    ses3->epochTelemetry->numLaps = 3;
+    ses3->epochTelemetry->checkeredFlagTime = 123;
+
+    auto eTelemData = EpochTelemetryDataSP(new EpochTelemetryData);
+    eTelemData->time = 321;
+    auto datum1 = EpochTelemetryDriverDatumSP(new EpochTelemetryDriverDatum);
+    datum1->uid = 234;
+    datum1->percentPos = 0.5;
+    datum1->percentPosDelta = 0.1;
+    auto datum2 = EpochTelemetryDriverDatumSP(new EpochTelemetryDriverDatum);
+    datum2->uid = 34;
+    datum2->percentPos = 0.52;
+    datum2->percentPosDelta = 0.21;
+
+    eTelemData->data.push_back(datum1);
+    eTelemData->data.push_back(datum2);
+    ses3->epochTelemetry->epochList.push_back(eTelemData);
+
+    testSessions.clear();
+    testSessions.push_back(ses3);
+
+    sys->setSessions(testSessions);
+    sys->resetStream();
+    sys->receive(NULL, e);
+
+    EXPECT_EQ(sys->getString(), "[{\"id\":432,\"drivers\":[{\"id\":234,\"laps\":[]}],\"epochTelemetry\":{\"numLaps\":3,\"checkeredFlagTime\":123,\"epochList\":[{\"time\":321,\"data\":[{\"uid\":234,\"percentPos\":0.5,\"percentPosDelta\":0.1},{\"uid\":34,\"percentPos\":0.52,\"percentPosDelta\":0.21}]}]}}]");
 
     /////////////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////

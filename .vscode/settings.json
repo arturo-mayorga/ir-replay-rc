@@ -114,5 +114,6 @@
         "string_view": "cpp",
         "xmemory0": "cpp",
         "xthread": "cpp"
-    }
+    },
+    "editor.formatOnSave": true
 }

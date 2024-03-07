@@ -29,10 +29,37 @@ struct Driver
 };
 typedef std::shared_ptr<Driver> DriverSP;
 
+struct EpochTelemetryDriverDatum
+{
+    int uid;
+    double percentPos;
+    double percentPosDelta;
+};
+typedef std::shared_ptr<EpochTelemetryDriverDatum> EpochTelemetryDriverDatumSP;
+
+struct EpochTelemetryData
+{
+    int time;
+    std::vector<EpochTelemetryDriverDatumSP> data;
+};
+typedef std::shared_ptr<EpochTelemetryData> EpochTelemetryDataSP;
+
+struct EpochTelemetry
+{
+    int numLaps;
+    int checkeredFlagTime;
+    std::vector<EpochTelemetryDataSP> epochList;
+
+    EpochTelemetry() : numLaps(0), checkeredFlagTime(0) {}
+};
+typedef std::shared_ptr<EpochTelemetry> EpochTelemetrySP;
+
 struct Session
 {
     int id;
     std::vector<DriverSP> drivers;
+    EpochTelemetrySP epochTelemetry;
+    Session() : epochTelemetry(new EpochTelemetry) {}
 };
 typedef std::shared_ptr<Session> SessionSP;
 
