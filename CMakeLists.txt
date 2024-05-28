@@ -75,10 +75,6 @@ add_executable(
     src/components/rendering-comp.cpp
     src/systems/irtelemetry-sys.cpp
     src/systems/replay-director-system.cpp
-    src/systems/session-leaderboard-sys.cpp
-    src/systems/window-rendering-sys.cpp
-    src/systems/timing-tower-sys.cpp
-    src/systems/current-driver-overlay-sys.cpp
 )
 TARGET_LINK_LIBRARIES(ir-replay-rc)
 

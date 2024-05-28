@@ -21,17 +21,6 @@ enum ReplayState
     DONE
 };
 
-void playSoundForTime(int time)
-{
-    std::wstringstream sout;
-    sout << L"open \"script_" << time << L".wav\" type mpegvideo alias mp3";
-    std::wcout << L"playing: " << sout.str() << std::endl;
-    mciSendString((sout.str().c_str()), NULL, 0, NULL);
-    mciSendString(L"play mp3 wait", NULL, 0, NULL);
-    mciSendString(L"close mp3", NULL, 0, NULL);
-    std::wcout << L"audio finished" << std::endl;
-}
-
 ReplayDirectorSystem::~ReplayDirectorSystem() {}
 void ReplayDirectorSystem::configure(class ECS::World *world) {}
 void ReplayDirectorSystem::unconfigure(class ECS::World *world) {}
@@ -66,6 +55,7 @@ void ReplayDirectorSystem::tick(class ECS::World *world, float deltaTime)
         {
             std::cout << "Entering SPIN mode for testing" << std::endl;
             state = SPIN;
+            // std::cout << "new state: " << state << std::endl;
         }
 
         break;
@@ -79,10 +69,12 @@ void ReplayDirectorSystem::tick(class ECS::World *world, float deltaTime)
         if (camScript->items[scriptItemIndex]->time > 0)
         {
             state = SEEKING_JUMP;
+            // std::cout << "new state: " << state << std::endl;
         }
         else
         {
             state = SEEKING_WAIT;
+            // std::cout << "new state: " << state << std::endl;
         }
 
         break;
@@ -98,11 +90,16 @@ void ReplayDirectorSystem::tick(class ECS::World *world, float deltaTime)
             {
                 std::cout << "time " << time << " idx " << idx << " uid " << camScript->items[scriptItemIndex]->driverId << std::endl;
                 world->emit<OnCameraChangeRequest>(OnCameraChangeRequest(idx));
-
-                playSoundForTime(time);
             }
 
             state = VIEWING_WAIT;
+            // std::cout << "new state: " << state << std::endl;
+
+            if (scriptItemIndex >= camScript->items.size() - 1)
+            {
+                state = DONE;
+                // std::cout << "new state: " << state << std::endl;
+            }
         }
         break;
     }
@@ -111,11 +108,13 @@ void ReplayDirectorSystem::tick(class ECS::World *world, float deltaTime)
         if (cameraActualsComponent->replayFrameNum >= camScript->items[scriptItemIndex]->time + 3 * 60)
         {
             state = SEEKING;
+            // std::cout << "new state: " << state << std::endl;
             scriptItemIndex++;
 
             if (scriptItemIndex > camScript->items.size() - 1)
             {
                 state = DONE;
+                // std::cout << "new state: " << state << std::endl;
             }
         }
 
@@ -123,7 +122,7 @@ void ReplayDirectorSystem::tick(class ECS::World *world, float deltaTime)
     }
     case SEEKING_JUMP:
     {
-        int time = camScript->items[scriptItemIndex]->time - 3 * 60;
+        int time = camScript->items[scriptItemIndex]->time;
         int idx = uid2driverIdx[camScript->items[scriptItemIndex]->driverId];
 
         std::cout << "time " << time << " idx " << idx << " uid " << camScript->items[scriptItemIndex]->driverId << std::endl;
@@ -131,21 +130,29 @@ void ReplayDirectorSystem::tick(class ECS::World *world, float deltaTime)
         world->emit<OnFrameNumChangeRequest>(OnFrameNumChangeRequest(time));
         world->emit<OnCameraChangeRequest>(OnCameraChangeRequest(idx));
 
-        playSoundForTime(camScript->items[scriptItemIndex]->time);
-
         state = VIEWING_JUMP;
+        // std::cout << "new state: " << state << std::endl;
         break;
     }
     case VIEWING_JUMP:
     {
-        if (cameraActualsComponent->replayFrameNum >= camScript->items[scriptItemIndex]->time + 2 * 60)
+
+        int extraTime = 2 * 60;
+        if (scriptItemIndex >= camScript->items.size() - 1)
+        {
+            extraTime = 0;
+        }
+
+        if (cameraActualsComponent->replayFrameNum >= camScript->items[scriptItemIndex]->time + extraTime)
         {
             state = SEEKING;
+            // std::cout << "new state: " << state << std::endl;
             scriptItemIndex++;
 
             if (scriptItemIndex > camScript->items.size() - 1)
             {
                 state = DONE;
+                // std::cout << "new state: " << state << std::endl;
             }
         }
         break;

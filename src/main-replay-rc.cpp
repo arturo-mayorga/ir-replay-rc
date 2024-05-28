@@ -13,35 +13,47 @@
 #include "components/cam-ctrl-comp.h"
 
 #include <ctime>
+#include <cstdlib>
 #include <tchar.h>
 
-CameraScriptComponentSP loadScript(ECS::World *world)
+CameraScriptComponentSP loadScript(ECS::World *world, int argc, char *argv[])
 {
-    std::cout << "Loading Script..." << std::endl;
-    int scriptItemCount = 0;
-    std::cin >> scriptItemCount;
-
     ECS::Entity *camScriptEnt = world->create();
     auto camScript = camScriptEnt->assign<CameraScriptComponentSP>(new CameraScriptComponent()).get();
-    for (int i = 0; i < scriptItemCount; ++i)
-    {
-        int time = 0;
-        int driverId = 0;
 
-        std::cin >> time;
-        std::cin >> driverId;
+    if (3 == argc)
+    {
+        int time = atoi(argv[1]);
+        int driverId = atoi(argv[2]);
 
         camScript.get()->items.push_back(CameraScriptItemSP(new CameraScriptItem(time, driverId)));
     }
+    else
+    {
+        std::cout << "Loading Script..." << std::endl;
+        int scriptItemCount = 0;
+        std::cin >> scriptItemCount;
 
-    std::cout << scriptItemCount << std::endl;
+        for (int i = 0; i < scriptItemCount; ++i)
+        {
+            int time = 0;
+            int driverId = 0;
+
+            std::cin >> time;
+            std::cin >> driverId;
+
+            camScript.get()->items.push_back(CameraScriptItemSP(new CameraScriptItem(time, driverId)));
+        }
+
+        std::cout << scriptItemCount << std::endl;
+    }
 
     std::cout << "Starting Loop..." << std::endl;
 
     return camScript;
 }
 
-int main()
+int main(int argc, char *argv[])
 {
     ECS::World *world = ECS::World::createWorld();
 
@@ -58,7 +70,7 @@ int main()
 
     auto tPrev = GetTickCount();
 
-    auto script = loadScript(world);
+    auto script = loadScript(world, argc, argv);
 
     while (script->done == 0)
     {
