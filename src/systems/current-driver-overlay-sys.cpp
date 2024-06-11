@@ -95,8 +95,8 @@ void CurrentDriverOverlaySystem::createWindow(ECS::World *world)
     _canvasEnt = world->create();
 
     auto cCfg = _canvasEnt->assign<CanvasConfigComponentSP>(new CanvasConfigComponent());
-    cCfg.get()->x = 1375;
-    cCfg.get()->y = 60; // 950
+    cCfg.get()->x = 1280 - WIDTH + 35; // 25   50
+    cCfg.get()->y = 160;               // 950
     cCfg.get()->w = WIDTH;
     cCfg.get()->h = HEIGHT;
 

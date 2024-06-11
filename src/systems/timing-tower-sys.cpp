@@ -2,6 +2,7 @@
 #include "../components/rendering-comp.h"
 #include "../components/car-comp.h"
 #include "../components/session-comp.h"
+#include "../components/timing-tower-config-comp.h"
 
 #include "../ecs-util.h"
 #include "../strutil.h"
@@ -116,8 +117,8 @@ void TimingTowerSystem::createWindow(ECS::World *world)
     _canvasEnt = world->create();
 
     auto cCfg = _canvasEnt->assign<CanvasConfigComponentSP>(new CanvasConfigComponent());
-    cCfg.get()->x = 20;
-    cCfg.get()->y = 20;
+    cCfg.get()->x = 120;
+    cCfg.get()->y = 120;
     cCfg.get()->w = w.pos /*+ w.num*/ + w.nam /*+ w.del + w.pit*/ + (/*6*/ 3 * w.m);
     cCfg.get()->h = (int)entries.size() * h + w.m + headerHeight;
 
@@ -154,8 +155,10 @@ void TimingTowerSystem::updateTables(ECS::World *world)
     int header1W = 133;
     int header2W = 97;
 
+    auto config = ECSUtil::getFirstCmp<TimingTowerConfigComponent>(world);
+
     int headerOffset = (int)((wd - header1W) / 2);
-    t1.get()->texts.push_back(TextInfoSP(new TextInfo(L"   iFL", headerOffset, 0, (int)(h * 2), 194, 194, 186)));
+    t1.get()->texts.push_back(TextInfoSP(new TextInfo(config.league, headerOffset, 0, (int)(h * 2), 194, 194, 186)));
     t1.get()->texts.push_back(TextInfoSP(new TextInfo(L"RACE", headerOffset + (int)(h * 3.75), (int)(h * .35), (int)(h * 1.5), 154, 155, 150)));
 
     headerOffset = (int)((wd - header2W) / 2);
@@ -165,7 +168,7 @@ void TimingTowerSystem::updateTables(ECS::World *world)
     std::wstringstream currentLap;
     std::wstringstream sessionLaps;
 
-    if (lapI > slapI)
+    if (lapI > slapI && 0 != slapI)
     {
         currentLap << L"Finish";
     }
@@ -176,7 +179,16 @@ void TimingTowerSystem::updateTables(ECS::World *world)
             currentLap << L"   ";
         }
         currentLap << lapI;
-        sessionLaps << L"/" << slapI;
+
+        if (0 == slapI)
+        {
+            sessionLaps << L"/Inf";
+        }
+        else
+        {
+
+            sessionLaps << L"/" << slapI;
+        }
     }
 
     t1.get()->texts.push_back(TextInfoSP(new TextInfo(L"LAP", headerOffset, h * 2, (int)(h * 1.15), 121, 121, 123)));

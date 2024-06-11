@@ -16,13 +16,33 @@
 #include "components/car-comp.h"
 #include "components/session-comp.h"
 #include "components/cam-ctrl-comp.h"
+#include "components/timing-tower-config-comp.h"
 
 #include <ctime>
 #include <tchar.h>
 
-int main()
+#include <locale>
+#include <codecvt>
+#include <string>
+
+void loadConfig(int argc, char *argv[], ECS::World *world)
+{
+    if (argc > 1)
+    {
+        std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+
+        ECS::Entity *timingTowerConfig = world->create();
+        TimingTowerConfigComponent cfg;
+        cfg.league = converter.from_bytes(argv[1]);
+        timingTowerConfig->assign<TimingTowerConfigComponent>(cfg);
+    }
+}
+
+int main(int argc, char *argv[])
 {
     ECS::World *world = ECS::World::createWorld();
+
+    loadConfig(argc, argv, world);
 
     ECS::Entity *ent = world->create();
     ent->assign<CameraActualsComponentSP>(new CameraActualsComponent());
